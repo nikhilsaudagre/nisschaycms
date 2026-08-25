@@ -50,11 +50,14 @@ public class AuthService {
             throw new IllegalArgumentException("Passwords do not match");
         }
 
+        String adminEmail = request.getAdminEmail() != null ? request.getAdminEmail().trim().toLowerCase() : "";
+        String clinicEmail = request.getClinicEmail() != null ? request.getClinicEmail().trim().toLowerCase() : "";
+
         // 1. Create Clinic
         Clinic clinic = clinicService.createClinic(
-                request.getClinicName(),
-                request.getClinicEmail(),
-                request.getClinicPhone(),
+                request.getClinicName() != null ? request.getClinicName().trim() : "",
+                clinicEmail,
+                request.getClinicPhone() != null ? request.getClinicPhone().trim() : "",
                 request.getClinicAddress()
         );
 
@@ -62,8 +65,8 @@ public class AuthService {
         User admin = userService.createUser(
                 clinic,
                 "ADMIN",
-                request.getAdminName(),
-                request.getAdminEmail(),
+                request.getAdminName() != null ? request.getAdminName().trim() : "",
+                adminEmail,
                 request.getAdminPassword(),
                 request.getAdminPhone()
         );
@@ -71,16 +74,17 @@ public class AuthService {
         log.info("Successfully registered clinic '{}' and admin user '{}'", clinic.getName(), admin.getEmail());
 
         // 3. Perform Auto Login
-        return login(new LoginRequest() {{
-            setEmail(request.getAdminEmail());
-            setPassword(request.getAdminPassword());
-        }});
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setEmail(adminEmail);
+        loginReq.setPassword(request.getAdminPassword());
+        return login(loginReq);
     }
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
+        String normalizedEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);

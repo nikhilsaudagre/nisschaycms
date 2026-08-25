@@ -24,7 +24,8 @@ public class UserService {
 
     @Transactional
     public User createUser(Clinic clinic, String roleId, String name, String email, String password, String phone) {
-        if (userRepository.existsByEmail(email)) {
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new IllegalArgumentException("Email is already in use");
         }
 
@@ -34,10 +35,10 @@ public class UserService {
         User user = User.builder()
                 .clinic(clinic)
                 .role(role)
-                .name(name)
-                .email(email)
+                .name(name != null ? name.trim() : "")
+                .email(normalizedEmail)
                 .passwordHash(passwordEncoder.encode(password))
-                .phone(phone)
+                .phone(phone != null ? phone.trim() : "")
                 .active(true)
                 .build();
 
@@ -52,7 +53,8 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        return userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
     }
 
