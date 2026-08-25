@@ -1,0 +1,27 @@
+services:
+  # 1. Spring Boot Backend Web Service
+  - type: web
+    name: nisschay-cms-backend
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: free
+    healthCheckPath: /api/v1/auth/test
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: nisschay-postgres
+          property: connectionString
+      - key: NISSCHAY_APP_JWTSECRET
+        generateValue: true
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: SPRING_JPA_SHOW_SQL
+        value: "false"
+
+# 2. Managed PostgreSQL Database on Render
+databases:
+  - name: nisschay-postgres
+    databaseName: nisschay_cms
+    user: postgres
+    plan: free
