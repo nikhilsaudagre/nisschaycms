@@ -3,7 +3,15 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { PublicRoute } from '@/components/public-route';
-import { ShieldCheck, Stethoscope, Clock, Users, FileText, CheckCircle2, Sparkles } from 'lucide-react';
+import {
+  ShieldCheck,
+  Stethoscope,
+  Activity,
+  BedDouble,
+  Pill,
+  Sparkles,
+  Lock,
+} from 'lucide-react';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -11,84 +19,127 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <PublicRoute>
-      <div className="min-h-screen flex flex-col md:flex-row bg-[#F6F9FB]">
-        {/* Left Side: Deep Navy + Clinical Teal Brand Panel (From Image Specification) */}
-        <div className="hidden md:flex md:w-5/12 bg-[#0B2533] text-white p-10 lg:p-14 flex-col justify-between relative overflow-hidden shadow-2xl shrink-0">
-          
-          {/* Ambient luminous Teal and Soft Blue glowing accents */}
-          <div className="absolute -right-16 -top-16 w-80 h-80 bg-[#087F8C]/25 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-16 -bottom-16 w-80 h-80 bg-[#4FA8DB]/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-[#F6F9FB]">
+        {/* Left Side: Original Nisschay Clinical Intelligence Showcase */}
+        <div className="hidden md:flex md:w-[42%] lg:w-[40%] xl:w-[38%] bg-[#0A1A22] text-white p-6 lg:p-10 flex-col justify-between relative overflow-hidden shadow-2xl shrink-0">
+          {/* Subtle Ambient Radial Glows */}
+          <div className="absolute -right-24 -top-24 w-80 h-80 bg-[#087F8C]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-24 -bottom-24 w-80 h-80 bg-[#22A06B]/15 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Top Brand Logo */}
-          <div className="flex items-center space-x-3.5 relative z-10">
-            <div className="w-11 h-11 rounded-2xl bg-[#087F8C] text-white flex items-center justify-center shadow-lg">
-              <Stethoscope className="w-6 h-6" />
+          {/* Header Brand */}
+          <div className="flex items-center space-x-3 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#087F8C] to-[#0AA0B0] text-white flex items-center justify-center shadow-lg shadow-[#087F8C]/30 ring-1 ring-white/20 shrink-0">
+              <Stethoscope className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-2xl font-extrabold tracking-tight text-white block leading-none">Nisschay CMS</span>
-              <span className="text-[11px] text-[#4FA8DB] uppercase font-bold tracking-widest block mt-1">Smart Healthcare System</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-black tracking-tight text-white block leading-tight">
+                  Nisschay CMS
+                </span>
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-[#087F8C]/30 text-[#4FA8DB] border border-[#087F8C]/50 tracking-wider">
+                  Live
+                </span>
+              </div>
+              <span className="text-[10.5px] text-[#567781] font-semibold tracking-wide block mt-0.5">
+                Hospital & Practice Operating System
+              </span>
             </div>
           </div>
 
-          {/* Central Showcase */}
-          <div className="space-y-6 relative z-10 my-auto py-8 max-w-md">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-bold text-[#4FA8DB]">
-              <Sparkles className="w-3.5 h-3.5 text-[#087F8C]" />
-              <span>Practitioner Portal</span>
-            </div>
-
-            <div className="space-y-3">
-              <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                Modern clinical workflow, <br />
-                <span className="text-[#4FA8DB]">built for healthcare.</span>
+          {/* Central Showcase: Real Nisschay Live Micro-Widgets */}
+          <div className="space-y-4 relative z-10 my-auto py-2 max-w-sm w-full">
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-white/5 backdrop-blur-md border border-white/10 text-[10.5px] font-bold text-[#4FA8DB]">
+                <Sparkles className="w-3 h-3 text-[#087F8C]" />
+                <span>Unified Clinical Workflow</span>
+              </div>
+              <h2 className="text-2xl lg:text-[26px] font-black tracking-tight text-white leading-tight">
+                Empowering modern <br />
+                <span className="bg-gradient-to-r from-[#087F8C] via-[#4FA8DB] to-[#22A06B] bg-clip-text text-transparent">
+                  hospitals & practices
+                </span>
               </h2>
-              <p className="text-sm text-[#E8EEF2]/80 leading-relaxed font-medium">
-                Professional. Trustworthy. Calm. Live patient queues, 1-click prescription writing, and structured digital medical records.
-              </p>
             </div>
 
-            {/* Feature Cards */}
-            <div className="space-y-3 pt-2">
-              {[
-                { icon: Clock, title: 'Live Patient Queue & TV Lounge', desc: 'Manage token flow with 0 waiting chaos' },
-                { icon: FileText, title: 'Smart 1-Click Prescriptions', desc: 'Auto diagnosis protocols & dosage fill' },
-                { icon: Users, title: 'Secure Patient Medical Records', desc: 'Instant access to past visits and vitals' },
-              ].map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <div
-                    key={item.title}
-                    className="flex items-start space-x-3.5 p-3.5 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-sm"
-                  >
-                    <div className="w-8 h-8 rounded-xl bg-[#087F8C]/30 border border-[#087F8C]/40 text-[#4FA8DB] flex items-center justify-center shrink-0 mt-0.5">
-                      <IconComponent className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-extrabold text-white">{item.title}</h4>
-                      <p className="text-[11px] text-[#E8EEF2]/75 font-medium">{item.desc}</p>
-                    </div>
+            {/* Live Interactive Platform Widgets */}
+            <div className="space-y-2.5">
+              {/* Widget 1: Live OPD Token */}
+              <div className="p-3 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-xs flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#087F8C]/20 border border-[#087F8C]/40 flex items-center justify-center text-[#4FA8DB] shrink-0">
+                    <Activity className="w-3.5 h-3.5" />
                   </div>
-                );
-              })}
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>Token #14</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#22A06B] animate-pulse" />
+                      <span className="text-[10px] text-[#22A06B] font-semibold">In Consultation</span>
+                    </div>
+                    <span className="text-[10px] text-white/50">OPD Queue & TV Lounge Synced</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white/10 text-white/90">
+                  Room 01
+                </span>
+              </div>
+
+              {/* Widget 2: IPD Bed & 12h Tariff Ledger */}
+              <div className="p-3 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-xs flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#22A06B]/20 border border-[#22A06B]/40 flex items-center justify-center text-[#22A06B] shrink-0">
+                    <BedDouble className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white">Deluxe Bed 108 • Active Stay</div>
+                    <span className="text-[10px] text-white/50">Auto 12-Hour Tariff & Doctor Rounds</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-[#22A06B] px-2 py-0.5 rounded bg-[#22A06B]/20">
+                  ₹0 Dues
+                </span>
+              </div>
+
+              {/* Widget 3: Pharmacy Indent & Rx Notepad */}
+              <div className="p-3 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 shadow-xs flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-[#4FA8DB]/20 border border-[#4FA8DB]/40 flex items-center justify-center text-[#4FA8DB] shrink-0">
+                    <Pill className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white">Smart Digital Rx & Pharmacy Indent</div>
+                    <span className="text-[10px] text-white/50">Instant Inventory Match & Billing</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-[#4FA8DB] px-2 py-0.5 rounded bg-[#4FA8DB]/20">
+                  100% Stock
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Compliance Footer */}
-          <div className="flex items-center space-x-2.5 text-xs font-semibold text-[#E8EEF2]/80 relative z-10 bg-white/5 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 self-start">
-            <ShieldCheck className="w-4 h-4 text-[#22A06B]" />
-            <span>Professional. Trustworthy. Calm. Built for Healthcare.</span>
+          {/* Bottom Security Badge */}
+          <div className="flex items-center justify-between pt-3 border-t border-white/10 text-[11px] text-white/60 relative z-10">
+            <div className="flex items-center space-x-1.5 font-medium">
+              <Lock className="w-3.5 h-3.5 text-[#22A06B]" />
+              <span>Isolated Multi-Tenant Security</span>
+            </div>
+            <span className="text-[10px] font-mono text-white/40">v1.0.0 Live</span>
           </div>
         </div>
 
-        {/* Right Side: Form Panel on Cool White Background */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-8 md:p-12 overflow-y-auto">
-          <div className={`w-full ${isRegister ? 'max-w-xl' : 'max-w-md'} bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-[#E8EEF2] p-6 sm:p-10 transition-all duration-200`}>
+        {/* Right Side: Form Viewport */}
+        <div className="flex-1 h-full overflow-y-auto flex items-center justify-center p-4 sm:p-6 lg:p-8">
+          <div
+            className={`w-full ${
+              isRegister ? 'max-w-2xl' : 'max-w-md'
+            } bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-[#E8EEF2] p-6 sm:p-8 transition-all duration-200 my-auto`}
+          >
             {/* Mobile Header Logo */}
-            <div className="flex md:hidden items-center justify-center space-x-2.5 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#087F8C] text-white flex items-center justify-center shadow-md">
-                <Stethoscope className="w-5 h-5" />
+            <div className="flex md:hidden items-center justify-center space-x-2.5 mb-5 pb-3 border-b border-[#E8EEF2]">
+              <div className="w-8 h-8 rounded-lg bg-[#087F8C] text-white flex items-center justify-center shadow-xs">
+                <Stethoscope className="w-4 h-4" />
               </div>
-              <span className="text-xl font-extrabold text-[#172B34] tracking-tight">Nisschay CMS</span>
+              <span className="text-lg font-black text-[#172B34] tracking-tight">Nisschay CMS</span>
             </div>
 
             {children}

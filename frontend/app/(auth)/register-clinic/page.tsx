@@ -23,12 +23,18 @@ import {
   ArrowRight,
   ShieldCheck,
   Hospital,
-  CheckCircle2,
   Check,
   Loader2,
-  BedDouble,
   Stethoscope,
-  Sparkles
+  Sparkles,
+  BedDouble,
+  Scissors,
+  Activity,
+  FileText,
+  Clock,
+  Receipt,
+  Users,
+  TestTube
 } from 'lucide-react';
 
 export default function RegisterClinicPage() {
@@ -59,6 +65,23 @@ export default function RegisterClinicPage() {
 
   const selectedFacilityType = watch('facilityType') || 'HOSPITAL';
 
+  const handleSelectSuite = (suiteType: 'HOSPITAL' | 'POLYCLINIC' | 'CLINIC') => {
+    setValue('facilityType', suiteType, { shouldValidate: true });
+    if (suiteType === 'HOSPITAL') {
+      setValue('totalBeds', 50);
+      setValue('totalIcuBeds', 10);
+      setValue('totalOtRooms', 2);
+    } else if (suiteType === 'POLYCLINIC') {
+      setValue('totalBeds', 12);
+      setValue('totalIcuBeds', 2);
+      setValue('totalOtRooms', 1);
+    } else {
+      setValue('totalBeds', 4);
+      setValue('totalIcuBeds', 0);
+      setValue('totalOtRooms', 0);
+    }
+  };
+
   const onSubmit = async (data: ClinicRegisterInput) => {
     setError(null);
     setSuccessMessage(null);
@@ -67,30 +90,30 @@ export default function RegisterClinicPage() {
       const user = await registerClinic(data);
       setIsSuccess(true);
       const docName = user.name ? `Dr. ${user.name.replace(/^dr\.?\s*/i, '')}` : 'Doctor';
-      setSuccessMessage(`Clinic registered successfully! Welcome, ${docName}. Setting up your workspace...`);
+      setSuccessMessage(`Practice registered successfully! Welcome, ${docName}. Setting up your workspace...`);
       setTimeout(() => {
         router.push('/dashboard');
       }, 1100);
     } catch (err: unknown) {
-      setError(typeof err === 'string' ? err : 'Failed to register clinic. Please check all fields.');
+      setError(typeof err === 'string' ? err : 'Failed to register practice. Please check all fields.');
       setIsSubmitting(false);
       setIsSuccess(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-h-[85vh] overflow-y-auto pr-1 custom-scrollbar">
+    <div className="space-y-5 max-h-[85vh] overflow-y-auto pr-1 custom-scrollbar">
       {/* Page Title */}
       <div className="space-y-1.5 text-center sm:text-left">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20 text-xs font-extrabold mb-1">
-          <Hospital className="w-3.5 h-3.5 text-[#087F8C]" />
+        <div className="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20 text-xs font-black mb-1">
+          <Sparkles className="w-3.5 h-3.5 text-[#087F8C]" />
           <span>New Practice Onboarding</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#172B34]">
-          Register Clinic / Hospital
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#172B34]">
+          Register Your Healthcare Facility
         </h1>
-        <p className="text-[#567781] font-medium text-xs sm:text-sm">
-          Set up your organization infrastructure and administrator credentials.
+        <p className="text-[#567781] font-semibold text-xs sm:text-sm">
+          Select your operating suite and create your administrative account.
         </p>
       </div>
 
@@ -119,216 +142,329 @@ export default function RegisterClinicPage() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {/* Section 1: Facility Type & Hospital Information */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E8EEF2] shadow-sm space-y-4">
+        {/* Section 1: Choose Operating Suite (Hospital vs Polyclinic vs Clinic) */}
+        <div className="bg-white p-5 rounded-2xl border border-[#E8EEF2] shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-[#E8EEF2] pb-3">
             <h2 className="text-xs font-black text-[#172B34] uppercase tracking-wider flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#087F8C]" />
-              <span>1. Hospital & Facility Profile</span>
+              <span>1. Choose Practice Operating Suite</span>
             </h2>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#087F8C]/10 text-[#087F8C]">
+            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-[#087F8C]/10 text-[#087F8C]">
               Step 1 of 2
             </span>
           </div>
 
-          {/* Facility Type Selector */}
-          <div className="space-y-2">
-            <Label className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
-              Facility Type *
-            </Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {[
-                { id: 'HOSPITAL', label: 'Multi-Specialty Hospital', desc: 'OPD + IPD Beds + OT + Triage', icon: Hospital },
-                { id: 'POLYCLINIC', label: 'Polyclinic & Day Care', desc: 'Multi-Doctor + Day Ward', icon: Building2 },
-                { id: 'CLINIC', label: 'Single Doctor Clinic', desc: 'OPD Practice & Rx Notepad', icon: Stethoscope },
-              ].map((item) => {
-                const isSelected = selectedFacilityType === item.id;
-                const IconComponent = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setValue('facilityType', item.id, { shouldValidate: true })}
-                    className={`relative text-left flex flex-col p-3 rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-[#087F8C] bg-[#087F8C]/8 shadow-xs ring-1 ring-[#087F8C]'
-                        : 'border-[#E8EEF2] bg-[#F6F9FB] hover:border-slate-300 hover:bg-slate-100/60'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <IconComponent className={`w-4 h-4 ${isSelected ? 'text-[#087F8C]' : 'text-[#567781]'}`} />
-                        <span className={`text-xs font-extrabold ${isSelected ? 'text-[#087F8C]' : 'text-[#172B34]'}`}>
-                          {item.label}
-                        </span>
-                      </div>
-                      {isSelected && (
-                        <div className="w-4 h-4 rounded-full bg-[#087F8C] text-white flex items-center justify-center">
-                          <Check className="w-2.5 h-2.5" />
-                        </div>
-                      )}
+          {/* 3-Suite Cards Comparison */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* 1. Hospital Suite Card */}
+            <div
+              onClick={() => handleSelectSuite('HOSPITAL')}
+              className={`relative text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                selectedFacilityType === 'HOSPITAL'
+                  ? 'border-[#087F8C] bg-[#087F8C]/5 ring-2 ring-[#087F8C] shadow-sm'
+                  : 'border-[#E8EEF2] bg-[#F6F9FB] hover:border-slate-300 hover:bg-slate-100/60'
+              }`}
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#087F8C] text-white flex items-center justify-center shadow-xs">
+                      <Hospital className="w-4 h-4" />
                     </div>
-                    <span className="text-[11px] text-[#567781] font-medium mt-1">{item.desc}</span>
-                  </button>
-                );
-              })}
+                    <div>
+                      <span className="text-xs font-black text-[#172B34] block">
+                        Hospital Suite
+                      </span>
+                      <span className="text-[9.5px] font-bold text-[#087F8C] uppercase tracking-wider">
+                        Full IPD & Surgical
+                      </span>
+                    </div>
+                  </div>
+                  {selectedFacilityType === 'HOSPITAL' && (
+                    <div className="w-4.5 h-4.5 rounded-full bg-[#087F8C] text-white flex items-center justify-center shadow-xs">
+                      <Check className="w-2.5 h-2.5" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Features Included */}
+                <div className="space-y-1.5 pt-2 border-t border-[#E8EEF2]/80">
+                  <span className="text-[9.5px] font-bold text-[#567781] uppercase tracking-wider block">
+                    What's Included:
+                  </span>
+                  <div className="grid grid-cols-1 gap-1 text-[10.5px] text-[#172B34]">
+                    <div className="flex items-center gap-1.5">
+                      <BedDouble className="w-3 h-3 text-[#087F8C] shrink-0" />
+                      <span>IPD Ward & Bed Stay Center</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Activity className="w-3 h-3 text-[#22A06B] shrink-0" />
+                      <span>Emergency Triage Matrix</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Scissors className="w-3 h-3 text-[#4FA8DB] shrink-0" />
+                      <span>OT Surgical Scheduling</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Receipt className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>12-Hour Tariff Ledger</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <FileText className="w-3 h-3 text-[#087F8C] shrink-0" />
+                      <span>Ward Indent & POS Pharmacy</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <input type="hidden" {...register('facilityType')} />
+
+            {/* 2. Polyclinic Suite Card */}
+            <div
+              onClick={() => handleSelectSuite('POLYCLINIC')}
+              className={`relative text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                selectedFacilityType === 'POLYCLINIC'
+                  ? 'border-[#087F8C] bg-[#087F8C]/5 ring-2 ring-[#087F8C] shadow-sm'
+                  : 'border-[#E8EEF2] bg-[#F6F9FB] hover:border-slate-300 hover:bg-slate-100/60'
+              }`}
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#4FA8DB] text-white flex items-center justify-center shadow-xs">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-[#172B34] block">
+                        Polyclinic Suite
+                      </span>
+                      <span className="text-[9.5px] font-bold text-[#4FA8DB] uppercase tracking-wider">
+                        Multi-Doctor & Daycare
+                      </span>
+                    </div>
+                  </div>
+                  {selectedFacilityType === 'POLYCLINIC' && (
+                    <div className="w-4.5 h-4.5 rounded-full bg-[#087F8C] text-white flex items-center justify-center shadow-xs">
+                      <Check className="w-2.5 h-2.5" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Features Included */}
+                <div className="space-y-1.5 pt-2 border-t border-[#E8EEF2]/80">
+                  <span className="text-[9.5px] font-bold text-[#567781] uppercase tracking-wider block">
+                    What's Included:
+                  </span>
+                  <div className="grid grid-cols-1 gap-1 text-[10.5px] text-[#172B34]">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3 h-3 text-[#4FA8DB] shrink-0" />
+                      <span>Multi-Doctor OPD Routing</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <BedDouble className="w-3 h-3 text-[#087F8C] shrink-0" />
+                      <span>Daycare Observation Beds</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <TestTube className="w-3 h-3 text-purple-600 shrink-0" />
+                      <span>Lab & Diagnostic Orders</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <FileText className="w-3 h-3 text-[#22A06B] shrink-0" />
+                      <span>Smart Rx & Consultation Notes</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Receipt className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>Multi-Doctor Billing & POS</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Clinic Suite Card */}
+            <div
+              onClick={() => handleSelectSuite('CLINIC')}
+              className={`relative text-left p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                selectedFacilityType === 'CLINIC'
+                  ? 'border-[#087F8C] bg-[#087F8C]/5 ring-2 ring-[#087F8C] shadow-sm'
+                  : 'border-[#E8EEF2] bg-[#F6F9FB] hover:border-slate-300 hover:bg-slate-100/60'
+              }`}
+            >
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#22A06B] text-white flex items-center justify-center shadow-xs">
+                      <Stethoscope className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-[#172B34] block">
+                        Clinic Suite
+                      </span>
+                      <span className="text-[9.5px] font-bold text-[#22A06B] uppercase tracking-wider">
+                        Solo OPD Practice
+                      </span>
+                    </div>
+                  </div>
+                  {selectedFacilityType === 'CLINIC' && (
+                    <div className="w-4.5 h-4.5 rounded-full bg-[#087F8C] text-white flex items-center justify-center shadow-xs">
+                      <Check className="w-2.5 h-2.5" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Features Included */}
+                <div className="space-y-1.5 pt-2 border-t border-[#E8EEF2]/80">
+                  <span className="text-[9.5px] font-bold text-[#567781] uppercase tracking-wider block">
+                    What's Included:
+                  </span>
+                  <div className="grid grid-cols-1 gap-1 text-[10.5px] text-[#172B34]">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-[#22A06B] shrink-0" />
+                      <span>Live Queue Token & TV Lounge</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <FileText className="w-3 h-3 text-[#087F8C] shrink-0" />
+                      <span>1-Click Smart Digital Rx</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-3 h-3 text-[#4FA8DB] shrink-0" />
+                      <span>Patient Visit History & Vitals</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Receipt className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>Consultation Billing Ledger</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="w-3 h-3 text-[#22A06B] shrink-0" />
+                      <span>Drug Dispensing & POS Counter</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" {...register('facilityType')} />
+
+          <div className="pt-2 text-[11px] text-[#567781] font-semibold flex items-center gap-1.5">
+            <span className="text-[#087F8C] font-bold">⚡ Note:</span>
+            <span>Beds, ICU wards, and tariffs are configured directly inside your app dashboard.</span>
           </div>
 
-          {/* Facility Name & Contact */}
-          <div className="space-y-1.5">
-            <Label htmlFor="clinicName" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
-              Hospital / Clinic Name *
-            </Label>
-            <div className="relative">
-              <Hospital className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
-              <Input
-                id="clinicName"
-                placeholder="e.g. LifeCare Multi-Specialty Hospital & Research Centre"
-                className={`pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white rounded-xl font-medium transition-all text-[#172B34] ${
-                  errors.clinicName ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
-                }`}
-                {...register('clinicName')}
-              />
-            </div>
-            {errors.clinicName && (
-              <p className="text-rose-600 text-xs font-medium mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                <span>{errors.clinicName.message}</span>
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Facility Name & Contact Info */}
+          <div className="space-y-3 pt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="clinicEmail" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
-                Official Email ID *
+              <Label htmlFor="clinicName" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
+                {selectedFacilityType === 'HOSPITAL'
+                  ? 'Hospital / Medical Center Name *'
+                  : selectedFacilityType === 'POLYCLINIC'
+                  ? 'Polyclinic / Specialty Center Name *'
+                  : 'Clinic / Practice Name *'}
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
+                <Hospital className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
                 <Input
-                  id="clinicEmail"
-                  type="email"
-                  placeholder="contact@hospital.com"
+                  id="clinicName"
+                  placeholder={
+                    selectedFacilityType === 'HOSPITAL'
+                      ? 'e.g. LifeCare Multi-Specialty Hospital'
+                      : selectedFacilityType === 'POLYCLINIC'
+                      ? 'e.g. Metro PolyClinic & Diagnostic Center'
+                      : 'e.g. Apex Health Clinic & Daycare'
+                  }
                   className={`pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white rounded-xl font-medium transition-all text-[#172B34] ${
-                    errors.clinicEmail ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
+                    errors.clinicName ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
                   }`}
-                  {...register('clinicEmail')}
+                  {...register('clinicName')}
                 />
               </div>
-              {errors.clinicEmail && (
-                <p className="text-rose-600 text-xs font-medium mt-1 flex items-center gap-1">
+              {errors.clinicName && (
+                <p className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
-                  <span>{errors.clinicEmail.message}</span>
+                  <span>{errors.clinicName.message}</span>
                 </p>
               )}
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="space-y-1.5">
+                <Label htmlFor="clinicEmail" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
+                  Official Email ID *
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
+                  <Input
+                    id="clinicEmail"
+                    type="email"
+                    placeholder="contact@facility.com"
+                    className={`pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white rounded-xl font-medium transition-all text-[#172B34] ${
+                      errors.clinicEmail ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
+                    }`}
+                    {...register('clinicEmail')}
+                  />
+                </div>
+                {errors.clinicEmail && (
+                  <p className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>{errors.clinicEmail.message}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="clinicPhone" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
+                  Reception Phone Number *
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
+                  <Input
+                    id="clinicPhone"
+                    placeholder="08025256262 / 9876543210"
+                    className={`pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white rounded-xl font-medium transition-all text-[#172B34] ${
+                      errors.clinicPhone ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
+                    }`}
+                    {...register('clinicPhone')}
+                  />
+                </div>
+                {errors.clinicPhone && (
+                  <p className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    <span>{errors.clinicPhone.message}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
             <div className="space-y-1.5">
-              <Label htmlFor="clinicPhone" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
-                Hospital Reception Phone *
+              <Label htmlFor="clinicAddress" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
+                Address & City Location
               </Label>
               <div className="relative">
-                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
+                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
                 <Input
-                  id="clinicPhone"
-                  placeholder="08025256262 / 9876543210"
-                  className={`pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white rounded-xl font-medium transition-all text-[#172B34] ${
-                    errors.clinicPhone ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
-                  }`}
-                  {...register('clinicPhone')}
+                  id="clinicAddress"
+                  placeholder="Building name, Road / Area, City, State, Pincode"
+                  className="pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white border-[#E8EEF2] focus-visible:ring-[#087F8C] rounded-xl font-medium text-[#172B34]"
+                  {...register('clinicAddress')}
                 />
               </div>
-              {errors.clinicPhone && (
-                <p className="text-rose-600 text-xs font-medium mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  <span>{errors.clinicPhone.message}</span>
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Hospital Infrastructure Scale */}
-          <div className="p-3.5 bg-[#F6F9FB] rounded-xl border border-[#E8EEF2] space-y-3">
-            <div className="text-[11px] font-bold text-[#172B34] uppercase tracking-wider flex items-center gap-1.5">
-              <BedDouble className="w-3.5 h-3.5 text-[#087F8C]" />
-              <span>{selectedFacilityType === 'CLINIC' ? 'Clinic Capacity Settings' : 'Inpatient Capacity & Bed Allocation'}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label htmlFor="totalBeds" className="text-[11px] font-bold text-[#567781]">
-                  {selectedFacilityType === 'CLINIC' ? 'Day Beds' : 'Total IPD Beds'}
-                </Label>
-                <Input
-                  id="totalBeds"
-                  type="number"
-                  defaultValue={selectedFacilityType === 'CLINIC' ? 4 : 50}
-                  placeholder="50"
-                  className="h-9 text-xs bg-white border-[#E8EEF2] rounded-lg mt-1 font-bold text-[#172B34]"
-                  {...register('totalBeds')}
-                />
-              </div>
-              <div>
-                <Label htmlFor="totalIcuBeds" className="text-[11px] font-bold text-[#567781]">
-                  ICU / CCU Beds
-                </Label>
-                <Input
-                  id="totalIcuBeds"
-                  type="number"
-                  defaultValue={selectedFacilityType === 'CLINIC' ? 0 : 10}
-                  placeholder="10"
-                  className="h-9 text-xs bg-white border-[#E8EEF2] rounded-lg mt-1 font-bold text-[#172B34]"
-                  {...register('totalIcuBeds')}
-                />
-              </div>
-              <div>
-                <Label htmlFor="totalOtRooms" className="text-[11px] font-bold text-[#567781]">
-                  OT Theatres
-                </Label>
-                <Input
-                  id="totalOtRooms"
-                  type="number"
-                  defaultValue={selectedFacilityType === 'CLINIC' ? 0 : 2}
-                  placeholder="2"
-                  className="h-9 text-xs bg-white border-[#E8EEF2] rounded-lg mt-1 font-bold text-[#172B34]"
-                  {...register('totalOtRooms')}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="clinicAddress" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
-              Hospital Address & Location
-            </Label>
-            <div className="relative">
-              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
-              <Input
-                id="clinicAddress"
-                placeholder="Building name, Road / Area, City, State, Pincode"
-                className="pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white border-[#E8EEF2] focus-visible:ring-[#087F8C] rounded-xl font-medium text-[#172B34]"
-                {...register('clinicAddress')}
-              />
             </div>
           </div>
         </div>
 
-        {/* Section 2: Owner/Doctor Account */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E8EEF2] shadow-sm space-y-4">
+        {/* Section 2: Owner/Doctor Admin Account */}
+        <div className="bg-white p-5 rounded-2xl border border-[#E8EEF2] shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-[#E8EEF2] pb-3">
             <h2 className="text-xs font-black text-[#172B34] uppercase tracking-wider flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#087F8C]" />
-              <span>2. Medical Director / Doctor Admin Login</span>
+              <span>2. Medical Director / Doctor Admin Account</span>
             </h2>
-            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#087F8C]/10 text-[#087F8C]">
+            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-[#087F8C]/10 text-[#087F8C]">
               Step 2 of 2
             </span>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="adminName" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
-              Doctor / Admin Full Name *
+            <Label htmlFor="adminName" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
+              Doctor / Administrator Full Name *
             </Label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
@@ -342,24 +478,24 @@ export default function RegisterClinicPage() {
               />
             </div>
             {errors.adminName && (
-              <p className="text-rose-600 text-xs font-medium mt-1 flex items-center gap-1">
+              <p className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 <span>{errors.adminName.message}</span>
               </p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
-              <Label htmlFor="adminEmail" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
-                Login Email ID *
+              <Label htmlFor="adminEmail" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
+                Doctor Login Email ID *
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
                 <Input
                   id="adminEmail"
                   type="email"
-                  placeholder="doctor@hospital.com"
+                  placeholder="doctor@facility.com"
                   className={`pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white rounded-xl font-medium transition-all text-[#172B34] ${
                     errors.adminEmail ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
                   }`}
@@ -375,7 +511,7 @@ export default function RegisterClinicPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="adminPhone" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
+              <Label htmlFor="adminPhone" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
                 Personal Mobile Number
               </Label>
               <div className="relative">
@@ -398,9 +534,9 @@ export default function RegisterClinicPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
-              <Label htmlFor="adminPassword" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
+              <Label htmlFor="adminPassword" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
                 Password *
               </Label>
               <div className="relative">
@@ -432,7 +568,7 @@ export default function RegisterClinicPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword" className="text-[#172B34] text-xs font-bold uppercase tracking-wider">
+              <Label htmlFor="confirmPassword" className="text-[#172B34] text-xs font-black uppercase tracking-wider">
                 Confirm Password *
               </Label>
               <div className="relative">
@@ -468,7 +604,7 @@ export default function RegisterClinicPage() {
         {/* Submit CTA Button */}
         <Button
           type="submit"
-          className={`w-full h-11 text-white font-extrabold text-sm rounded-xl transition-all duration-200 shadow-md active:scale-98 flex items-center justify-center space-x-2 border-0 cursor-pointer ${
+          className={`w-full h-11 text-white font-black text-sm rounded-xl transition-all duration-200 shadow-md active:scale-98 flex items-center justify-center space-x-2 border-0 cursor-pointer ${
             isSuccess ? 'bg-[#22A06B] shadow-[#22A06B]/30' : 'bg-[#087F8C] hover:bg-[#076b77] shadow-[#087F8C]/25'
           }`}
           disabled={isSubmitting || isSuccess}
@@ -476,16 +612,16 @@ export default function RegisterClinicPage() {
           {isSuccess ? (
             <>
               <Check className="w-5 h-5" />
-              <span>Practice Registered! Launching System...</span>
+              <span>Practice Registered! Opening System...</span>
             </>
           ) : isSubmitting ? (
             <>
               <Loader2 className="w-4.5 h-4.5 animate-spin" />
-              <span>Registering Practice Infrastructure...</span>
+              <span>Setting Up Practice Workspace...</span>
             </>
           ) : (
             <>
-              <span>Complete Clinic Registration</span>
+              <span>Complete Practice Registration</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}
@@ -499,12 +635,12 @@ export default function RegisterClinicPage() {
       </div>
 
       {/* Back to Login Footer */}
-      <div className="pt-4 border-t border-[#E8EEF2] text-center">
+      <div className="pt-3 border-t border-[#E8EEF2] text-center">
         <p className="text-[#567781] text-xs font-semibold">
           Already registered?{' '}
           <Link
             href="/login"
-            className="text-[#087F8C] hover:text-[#076b77] font-extrabold transition-colors underline underline-offset-2"
+            className="text-[#087F8C] hover:text-[#076b77] font-black transition-colors underline underline-offset-2"
           >
             Sign In to Portal
           </Link>
@@ -513,4 +649,3 @@ export default function RegisterClinicPage() {
     </div>
   );
 }
-
