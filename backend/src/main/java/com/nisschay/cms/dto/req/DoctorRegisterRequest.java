@@ -25,6 +25,12 @@ public class DoctorRegisterRequest {
     private String phone;
 
     private String registrationNumber;
+    private String medicalCouncil;
+    private Integer registrationYear;
+    private String languagesSpoken;
+    private String gender;
+    private String subSpecialization;
+    private String digitalSignature;
 
     @NotBlank(message = "Specialization is required")
     private String specialization;

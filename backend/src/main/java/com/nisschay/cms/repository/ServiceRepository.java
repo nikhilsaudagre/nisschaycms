@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface ServiceRepository extends JpaRepository<Service, UUID> {
-    List<Service> findByClinicIdAndActiveTrue(UUID clinicId);
-    List<Service> findByClinicId(UUID clinicId);
+    List<Service> findByClinicIdAndActiveTrueOrderByCreatedAtAsc(UUID clinicId);
+    List<Service> findByClinicIdOrderByCreatedAtAsc(UUID clinicId);
 }

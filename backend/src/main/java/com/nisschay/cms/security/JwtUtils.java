@@ -15,10 +15,10 @@ import java.util.Date;
 @Slf4j
 public class JwtUtils {
 
-    @Value("${nisschay.app.jwtSecret}")
+    @Value("${nisschay.app.jwtSecret:nisschaycmssecretkeyfortestingspringbootsecurityjwttokengeneration32bytes}")
     private String jwtSecret;
 
-    @Value("${nisschay.app.jwtExpirationMs}")
+    @Value("${nisschay.app.jwtExpirationMs:86400000}")
     private int jwtExpirationMs;
 
     private Key getSigningKey() {

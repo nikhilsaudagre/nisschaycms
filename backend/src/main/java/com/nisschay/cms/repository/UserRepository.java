@@ -12,5 +12,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
     java.util.List<User> findByClinicId(UUID clinicId);
+    long countByClinicId(UUID clinicId);
     java.util.List<User> findByClinicIdAndRoleIdIn(UUID clinicId, java.util.Collection<String> roleIds);
 }

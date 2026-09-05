@@ -17,20 +17,29 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register-clinic")
-    public ResponseEntity<AuthResponse> registerClinic(@Valid @RequestBody ClinicRegisterRequest request) {
-        AuthResponse response = authService.registerClinic(request);
+    public ResponseEntity<AuthResponse> registerClinic(
+            @Valid @RequestBody ClinicRegisterRequest request,
+            jakarta.servlet.http.HttpServletRequest httpServletRequest
+    ) {
+        AuthResponse response = authService.registerClinic(request, httpServletRequest);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpServletRequest
+    ) {
+        AuthResponse response = authService.login(request, httpServletRequest);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        AuthResponse response = authService.refreshAccessToken(request.getRefreshToken());
+    public ResponseEntity<AuthResponse> refresh(
+            @Valid @RequestBody RefreshRequest request,
+            jakarta.servlet.http.HttpServletRequest httpServletRequest
+    ) {
+        AuthResponse response = authService.refreshAccessToken(request.getRefreshToken(), httpServletRequest);
         return ResponseEntity.ok(response);
     }
 

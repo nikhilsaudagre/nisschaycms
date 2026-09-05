@@ -17,6 +17,7 @@ import java.util.UUID;
 public class PatientResponse {
     private UUID id;
     private UUID clinicId;
+    private String pid;
     private String name;
     private String gender;
     private LocalDate dateOfBirth;
@@ -43,7 +44,8 @@ public class PatientResponse {
     public static PatientResponse build(Patient patient) {
         return PatientResponse.builder()
                 .id(patient.getId())
-                .clinicId(patient.getClinic().getId())
+                .clinicId(patient.getClinic() != null ? patient.getClinic().getId() : null)
+                .pid(patient.getPid() != null ? patient.getPid() : "PID-" + patient.getId().toString().substring(0, 8).toUpperCase())
                 .name(patient.getName())
                 .gender(patient.getGender() != null ? patient.getGender() : "UNSPECIFIED")
                 .dateOfBirth(patient.getDateOfBirth())

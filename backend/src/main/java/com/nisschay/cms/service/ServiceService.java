@@ -19,12 +19,12 @@ public class ServiceService {
 
     @Transactional(readOnly = true)
     public List<Service> getActiveServicesByClinic(UUID clinicId) {
-        return serviceRepository.findByClinicIdAndActiveTrue(clinicId);
+        return serviceRepository.findByClinicIdAndActiveTrueOrderByCreatedAtAsc(clinicId);
     }
 
     @Transactional(readOnly = true)
     public List<Service> getAllServicesByClinic(UUID clinicId) {
-        return serviceRepository.findByClinicId(clinicId);
+        return serviceRepository.findByClinicIdOrderByCreatedAtAsc(clinicId);
     }
 
     @Transactional
@@ -33,6 +33,12 @@ public class ServiceService {
                 .orElseThrow(() -> new IllegalArgumentException("Clinic not found"));
         service.setClinic(clinic);
         service.setActive(true);
+        if (service.getCategory() == null || service.getCategory().isBlank()) {
+            service.setCategory("PROCEDURE");
+        }
+        if (service.getHsnSacCode() == null || service.getHsnSacCode().isBlank()) {
+            service.setHsnSacCode("999312");
+        }
         return serviceRepository.save(service);
     }
 
@@ -47,6 +53,15 @@ public class ServiceService {
 
         service.setName(updateData.getName());
         service.setFee(updateData.getFee());
+        if (updateData.getCategory() != null) {
+            service.setCategory(updateData.getCategory());
+        }
+        if (updateData.getHsnSacCode() != null) {
+            service.setHsnSacCode(updateData.getHsnSacCode());
+        }
+        service.setDoctorId(updateData.getDoctorId());
+        service.setDoctorName(updateData.getDoctorName());
+        service.setDescription(updateData.getDescription());
         if (updateData.getActive() != null) {
             service.setActive(updateData.getActive());
         }
@@ -55,7 +70,33 @@ public class ServiceService {
     }
 
     @Transactional
-    public void deleteService(UUID clinicId, UUID serviceId) {
+    public Service toggleServiceStatus(UUID clinicId, UUID serviceId) {
+        Service service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new IllegalArgumentException("Service not found"));
+
+        if (!service.getClinic().getId().equals(clinicId)) {
+            throw new IllegalArgumentException("Unauthorized to modify this service");
+        }
+
+        service.setActive(!Boolean.TRUE.equals(service.getActive()));
+        return serviceRepository.save(service);
+    }
+
+    @Transactional
+    public void deactivateService(UUID clinicId, UUID serviceId) {
+        Service service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new IllegalArgumentException("Service not found"));
+
+        if (!service.getClinic().getId().equals(clinicId)) {
+            throw new IllegalArgumentException("Unauthorized to modify this service");
+        }
+
+        service.setActive(false);
+        serviceRepository.save(service);
+    }
+
+    @Transactional
+    public void deleteServicePermanently(UUID clinicId, UUID serviceId) {
         Service service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new IllegalArgumentException("Service not found"));
 
@@ -63,8 +104,11 @@ public class ServiceService {
             throw new IllegalArgumentException("Unauthorized to delete this service");
         }
 
-        // Soft delete / disable
-        service.setActive(false);
-        serviceRepository.save(service);
+        serviceRepository.delete(service);
+    }
+
+    @Transactional
+    public void deleteService(UUID clinicId, UUID serviceId) {
+        deleteServicePermanently(clinicId, serviceId);
     }
 }

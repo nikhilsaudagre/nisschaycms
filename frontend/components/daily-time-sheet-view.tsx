@@ -264,24 +264,24 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
                 setBookingError(null);
                 setBookingSuccess(null);
               }}
-              className={`p-3 rounded-2xl border transition-all flex flex-col justify-between min-h-[90px] relative group ${
+              className={`p-3 rounded-xl border transition-all flex flex-col justify-between min-h-[90px] relative group ${
                 isBooked
-                  ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200/60 dark:border-rose-900/40 text-slate-500 cursor-not-allowed opacity-80'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-teal-500 hover:shadow-md text-slate-800 dark:text-slate-200 cursor-pointer'
+                  ? 'bg-[#D64545]/5 border-[#D64545]/15 text-[#567781] cursor-not-allowed'
+                  : 'bg-white border-[#E8EEF2] hover:border-[#087F8C] hover:shadow-xs text-[#172B34] cursor-pointer'
               }`}
             >
               {/* Slot Header: Time */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
-                <span className="text-xs font-mono font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+              <div className="flex items-center justify-between border-b border-[#E8EEF2] pb-1.5">
+                <span className="text-xs font-mono font-bold text-[#172B34] flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-[#087F8C]" />
                   {slot.time12}
                 </span>
                 {isBooked ? (
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60">
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#E9A23B]/10 text-[#E9A23B] border border-[#E9A23B]/20">
                     Booked
                   </span>
                 ) : (
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-900/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20 opacity-0 group-hover:opacity-100 transition-opacity">
                     Open
                   </span>
                 )}
@@ -290,22 +290,22 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
               {/* Slot Content */}
               {isBooked && bookedAppt ? (
                 <div className="pt-2 space-y-0.5">
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate flex items-center gap-1">
-                    <UserIcon className="w-3 h-3 text-teal-600 shrink-0" />
+                  <div className="text-xs font-bold text-[#172B34] truncate flex items-center gap-1">
+                    <UserIcon className="w-3 h-3 text-[#087F8C] shrink-0" />
                     <span>{bookedAppt.patientName}</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-semibold block truncate">
+                  <span className="text-[10px] text-[#567781] font-semibold block truncate">
                     Dr. {bookedAppt.doctorName}
                   </span>
-                  <span className="text-[9px] font-mono text-slate-400 block">
+                  <span className="text-[9px] font-mono text-[#567781]/70 block">
                     {bookedAppt.startTime?.substring(0, 5)} - {bookedAppt.endTime?.substring(0, 5)}
                   </span>
                 </div>
               ) : (
                 <div className="pt-2 text-center">
-                  <span className="text-[11px] font-bold text-teal-600 dark:text-teal-400 group-hover:underline flex items-center justify-center gap-1">
+                  <span className="text-[11px] font-bold text-[#087F8C] group-hover:underline flex items-center justify-center gap-1">
                     <Plus className="w-3.5 h-3.5" />
-                    Click to Book
+                    Book Slot
                   </span>
                 </div>
               )}
@@ -319,21 +319,21 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Upper Date Strip Selector Header */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-5 shadow-xs space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 flex-wrap gap-2">
+      <div className="bg-white border border-[#E8EEF2] rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between border-b border-[#E8EEF2] pb-3 flex-wrap gap-2">
           <div className="flex items-center space-x-2">
-            <CalendarIcon className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-            <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200">
-              Select Appointment Date Strip
+            <CalendarIcon className="w-4 h-4 text-[#087F8C]" />
+            <h3 className="text-xs sm:text-sm font-bold text-[#172B34]">
+              Select Appointment Date
             </h3>
           </div>
-          <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">
-            Selected: <strong className="text-teal-600 dark:text-teal-400">{selectedDate}</strong>
+          <span className="text-xs font-mono font-medium text-[#567781]">
+            Selected: <strong className="text-[#087F8C] font-bold">{selectedDate}</strong>
           </span>
         </div>
 
         {/* 7-Day Date Pill Selector Strip */}
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
           {dateStrip.map((day) => {
             const isSelected = selectedDate === day.dateStr;
             return (
@@ -341,18 +341,18 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
                 key={day.dateStr}
                 type="button"
                 onClick={() => onSelectDate(day.dateStr)}
-                className={`p-2.5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
+                className={`p-2 sm:p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
                   isSelected
-                    ? 'bg-teal-600 text-white border-teal-600 shadow-md ring-2 ring-teal-400/50 scale-[1.02]'
+                    ? 'bg-[#087F8C] text-white border-[#087F8C] shadow-xs'
                     : day.isToday
-                    ? 'bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 border-teal-300 dark:border-teal-700'
-                    : 'bg-slate-50/70 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 border-slate-200/70 dark:border-slate-700/80 hover:bg-white dark:hover:bg-slate-800'
+                    ? 'bg-[#087F8C]/10 text-[#087F8C] border-[#087F8C]/30'
+                    : 'bg-[#F6F9FB] text-[#172B34] border-[#E8EEF2] hover:bg-white hover:border-[#087F8C]/40'
                 }`}
               >
-                <span className="text-[10px] uppercase font-extrabold tracking-wider opacity-80">
+                <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
                   {day.dayName}
                 </span>
-                <span className="text-lg font-mono font-extrabold">{day.dayNum}</span>
+                <span className="text-base sm:text-lg font-mono font-extrabold">{day.dayNum}</span>
               </button>
             );
           })}
@@ -360,14 +360,14 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
       </div>
 
       {/* Main Timing Sheet Grid for Selected Date */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-xs space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 flex-wrap gap-2">
+      <div className="bg-white border border-[#E8EEF2] rounded-2xl p-4 sm:p-6 shadow-2xs space-y-6">
+        <div className="flex items-center justify-between border-b border-[#E8EEF2] pb-3 flex-wrap gap-2">
           <div className="flex items-center space-x-2">
-            <Clock className="w-4 h-4 text-teal-600 dark:text-teal-400" />
-            <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 font-sans">
+            <Clock className="w-4 h-4 text-[#087F8C]" />
+            <h3 className="text-xs sm:text-sm font-bold text-[#172B34]">
               {activeDoctor ? `Dr. ${activeDoctor.name}'s Consultation Timesheet` : 'All Doctors Consultation Timesheet'}
             </h3>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 shadow-2xs">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20 shadow-2xs font-mono">
               ⏱️ {activeSlotDuration} Mins / Slot
             </span>
           </div>
@@ -375,23 +375,23 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
 
         {renderSection(
           'Morning Timing Sheet (09:00 AM - 12:30 PM)',
-          <Sun className="w-3.5 h-3.5 text-amber-500" />,
+          <Sun className="w-3.5 h-3.5 text-[#E9A23B]" />,
           dynamicSlots.filter((s) => s.category === 'MORNING'),
-          'bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400'
+          'bg-[#E9A23B]/10 text-[#E9A23B] border border-[#E9A23B]/20'
         )}
 
         {renderSection(
           'Afternoon Timing Sheet (12:30 PM - 04:30 PM)',
-          <Sunset className="w-3.5 h-3.5 text-orange-500" />,
+          <Sunset className="w-3.5 h-3.5 text-[#087F8C]" />,
           dynamicSlots.filter((s) => s.category === 'AFTERNOON'),
-          'bg-orange-50 text-orange-600 dark:bg-orange-950/50 dark:text-orange-400'
+          'bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20'
         )}
 
         {renderSection(
           'Evening Timing Sheet (04:30 PM - 08:30 PM)',
-          <Moon className="w-3.5 h-3.5 text-indigo-500" />,
+          <Moon className="w-3.5 h-3.5 text-[#4FA8DB]" />,
           dynamicSlots.filter((s) => s.category === 'EVENING'),
-          'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400'
+          'bg-[#4FA8DB]/10 text-[#4FA8DB] border border-[#4FA8DB]/20'
         )}
       </div>
 
@@ -427,7 +427,7 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
               )}
 
               {bookingSuccess && (
-                <div className="p-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <div className="p-3 bg-sky-50 text-teal-700 border border-sky-200 rounded-xl text-xs font-semibold flex items-center gap-2">
                   <Check className="w-4 h-4 shrink-0" />
                   <span>{bookingSuccess}</span>
                 </div>
@@ -451,7 +451,7 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient *</Label>
                 {selectedPatientId ? (
-                  <div className="flex items-center justify-between p-3 bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-xl text-xs">
+                  <div className="flex items-center justify-between p-3 bg-sky-50/70 dark:bg-teal-950/40 border border-sky-200 dark:border-teal-800 rounded-xl text-xs">
                     <div>
                       <p className="font-extrabold text-slate-900 dark:text-white">{selectedPatientName}</p>
                       <p className="text-slate-500 dark:text-slate-400 text-[11px]">Registered Patient File Selected</p>
@@ -520,7 +520,7 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
                 <select
                   value={selectedDoctorId}
                   onChange={(e) => onSelectDoctor(e.target.value)}
-                  className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100"
+                  className="w-full h-10 px-3 bg-[#F6F9FB] border border-[#E8EEF2] rounded-xl text-xs font-semibold text-[#172B34] focus:outline-none focus:border-[#087F8C]"
                 >
                   <option value="">Choose Doctor...</option>
                   {doctors.map((d) => (
@@ -533,7 +533,7 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
 
               {/* Consultation Type */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Visit Type</Label>
+                <Label className="text-xs font-bold text-[#172B34]">Visit Type</Label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { id: 'CONSULTATION', label: 'Consult' },
@@ -544,12 +544,12 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
                       key={t.id}
                       type="button"
                       onClick={() => setVisitType(t.id)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
                         visitType === t.id
                           ? t.id === 'EMERGENCY'
-                            ? 'bg-rose-600 text-white border-rose-600'
-                            : 'bg-teal-600 text-white border-teal-600'
-                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                            ? 'bg-[#D64545] text-white border-[#D64545]'
+                            : 'bg-[#087F8C] text-white border-[#087F8C]'
+                          : 'bg-[#F6F9FB] border-[#E8EEF2] text-[#567781] hover:text-[#172B34]'
                       }`}
                     >
                       {t.label}
@@ -560,28 +560,28 @@ export const DailyTimeSheetView: React.FC<DailyTimeSheetViewProps> = ({
 
               {/* Reason */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">Reason / Chief Complaint (Optional)</Label>
+                <Label className="text-xs font-bold text-[#172B34]">Chief Complaints / Reason for Visit (Optional)</Label>
                 <Input
                   placeholder="e.g. Fever, Routine checkup"
                   value={visitReason}
                   onChange={(e) => setVisitReason(e.target.value)}
-                  className="h-10 text-xs rounded-xl"
+                  className="h-10 text-xs rounded-xl bg-[#F6F9FB] border-[#E8EEF2] text-[#172B34] focus:border-[#087F8C]"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+              <div className="pt-3 border-t border-[#E8EEF2] flex justify-end gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setBookingSlot(null)}
-                  className="rounded-xl text-xs font-bold"
+                  className="rounded-xl text-xs font-bold border-[#E8EEF2] text-[#567781]"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold px-5"
+                  className="bg-[#087F8C] hover:bg-[#076b77] text-white rounded-xl text-xs font-bold px-5 shadow-xs"
                 >
                   {createMutation.isPending ? 'Registering...' : 'Confirm Booking'}
                 </Button>

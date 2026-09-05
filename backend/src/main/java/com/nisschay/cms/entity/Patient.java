@@ -33,6 +33,9 @@ public class Patient {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "pid")
+    private String pid;
+
     @Column(nullable = true)
     private String gender; // MALE, FEMALE, OTHER
 

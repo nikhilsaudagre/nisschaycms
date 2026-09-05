@@ -22,6 +22,19 @@ public class ClinicRegisterRequest {
 
     private String clinicAddress;
 
+    // Hospital Infrastructure & Specialty Profile
+    private String facilityType;
+    private Integer totalBeds;
+    private Integer totalIcuBeds;
+    private Integer totalOtRooms;
+    private String nabhAccreditationNumber;
+    private String rohiniHospitalId;
+    private String clinicalEstRegistrationNumber;
+    private String enabledDepartments;
+    private String ambulanceContactPhone;
+    private Boolean bloodBankAvailable;
+    private Boolean pharmacy24x7;
+
     // Admin User Info
     @NotBlank(message = "Admin name is required")
     @Size(min = 2, max = 100, message = "Admin name must be between 2 and 100 characters")

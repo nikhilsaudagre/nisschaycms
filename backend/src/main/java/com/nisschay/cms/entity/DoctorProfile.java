@@ -59,6 +59,23 @@ public class DoctorProfile implements Persistable<UUID> {
     @Column(name = "registration_number")
     private String registrationNumber;
 
+    @Column(name = "medical_council")
+    private String medicalCouncil;
+
+    @Column(name = "registration_year")
+    private Integer registrationYear;
+
+    @Column(name = "languages_spoken")
+    private String languagesSpoken;
+
+    private String gender;
+
+    @Column(name = "sub_specialization")
+    private String subSpecialization;
+
+    @Column(name = "digital_signature", columnDefinition = "TEXT")
+    private String digitalSignature;
+
     private String qualification;
 
     @Column(name = "experience_years")

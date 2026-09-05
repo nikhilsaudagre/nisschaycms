@@ -35,6 +35,23 @@ public class Service {
     private BigDecimal fee;
 
     @Builder.Default
+    @Column(name = "category", length = 50)
+    private String category = "PROCEDURE"; // ROOM_BED, ICU_CCU, OPERATION_THEATRE, DOCTOR_FEE, NURSING_CARE, DIAGNOSTIC_LAB, PROCEDURE, OTHER
+
+    @Builder.Default
+    @Column(name = "hsn_sac_code", length = 20)
+    private String hsnSacCode = "999312";
+
+    @Column(name = "doctor_id")
+    private UUID doctorId;
+
+    @Column(name = "doctor_name")
+    private String doctorName;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
 

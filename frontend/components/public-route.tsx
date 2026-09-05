@@ -19,9 +19,6 @@ export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children 
     return <LoadingScreen />;
   }
 
-  if (isAuthenticated) {
-    return <LoadingScreen />; // Return loading screen during redirect
-  }
-
   return <>{children}</>;
 };
+

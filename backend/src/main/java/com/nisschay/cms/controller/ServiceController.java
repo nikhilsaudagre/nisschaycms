@@ -57,15 +57,32 @@ public class ServiceController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteService(
+    @PatchMapping("/{id}/toggle-status")
+    public ResponseEntity<Service> toggleServiceStatus(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
             @PathVariable UUID id
     ) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
-        serviceService.deleteService(userDetails.getClinicId(), id);
+        Service response = serviceService.toggleServiceStatus(userDetails.getClinicId(), id);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteService(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable UUID id,
+            @RequestParam(required = false, defaultValue = "true") boolean permanent
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).build();
+        }
+        if (permanent) {
+            serviceService.deleteServicePermanently(userDetails.getClinicId(), id);
+        } else {
+            serviceService.deactivateService(userDetails.getClinicId(), id);
+        }
         return ResponseEntity.noContent().build();
     }
 }

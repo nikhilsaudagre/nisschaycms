@@ -227,6 +227,27 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
   const isStaffRole = user?.role === 'RECEPTIONIST' || (user?.role as string) === 'ASSISTANT' || (user?.role as string) === 'STAFF';
   const isRxReadOnly = readOnlyRx !== undefined ? readOnlyRx : isStaffRole;
 
+  // Real Patient Data Query (loads real patient profile from DB if not passed in props)
+  const { data: fetchedPatient } = useQuery<Patient>({
+    queryKey: ['patient', appointment?.patientId],
+    queryFn: async () => {
+      if (!appointment?.patientId) return null;
+      try {
+        const res = await apiClient.get(`/patients/${appointment.patientId}`);
+        return res.data;
+      } catch {
+        return null;
+      }
+    },
+    enabled: isOpen && !!appointment?.patientId && (!patient || !patient.age),
+  });
+
+  const activePatient: Partial<Patient> | undefined = patient || fetchedPatient || (appointment ? {
+    id: appointment.patientId,
+    name: appointment.patientName,
+    phone: appointment.patientPhone,
+  } : undefined);
+
   // Layout View Mode
   const [viewLayout, setViewLayout] = useState<'split' | 'notepad' | 'preview'>('split');
   const [printMode, setPrintMode] = useState<EMRPrintMode>('PRESCRIPTION_PAD');
@@ -250,18 +271,8 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
   const [notes, setNotes] = useState<string>('');
   const [followUpDate, setFollowUpDate] = useState<string>('');
 
-  // Prescribed Medicines Structured List
-  const [medicines, setMedicines] = useState<MedicineRow[]>([
-    {
-      id: '1',
-      name: 'Tab. Paracetamol 650mg',
-      form: 'Tab.',
-      dosage: '1-0-1',
-      timing: 'After Food',
-      duration: '5 Days',
-      instructions: 'Take when fever > 99.5°F',
-    },
-  ]);
+  // Prescribed Medicines Structured List (Defaults to empty; populated from DB prescription if present)
+  const [medicines, setMedicines] = useState<MedicineRow[]>([]);
 
   // Dynamic Matched Clinical Protocols based on Diagnosis text
   const matchedProtocol = useMemo(() => {
@@ -291,15 +302,15 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
       setWeight(
         appointment.weight
           ? String(appointment.weight)
-          : patient?.weightKg
-          ? String(patient.weightKg)
+          : activePatient?.weightKg
+          ? String(activePatient.weightKg)
           : ''
       );
       setHeight(
         appointment.height
           ? String(appointment.height)
-          : patient?.heightCm
-          ? String(patient.heightCm)
+          : activePatient?.heightCm
+          ? String(activePatient.heightCm)
           : ''
       );
 
@@ -309,27 +320,53 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
       setFollowUpDate(appointment.followUpDate || '');
 
       if (appointment.prescription && appointment.prescription.trim()) {
-        const rawLines = appointment.prescription.split('\n').filter(Boolean);
-        const parsed: MedicineRow[] = rawLines.map((line, idx) => {
-          const clean = line.replace(/^[•\-\*0-9\.]+\s*/, '');
-          const parts = clean.split('—').map((p) => p.trim());
-          const subParts = parts.length === 1 ? clean.split('-').map((p) => p.trim()) : parts;
-          return {
-            id: String(idx + 1),
-            name: subParts[0] || clean,
-            form: (subParts[0] || '').split(' ')[0] || 'Tab.',
-            dosage: subParts[1] || '1-0-1',
-            timing: subParts[2] || 'After Food',
-            duration: subParts[3] || '5 Days',
-            instructions: subParts[4] || '',
-          };
-        });
-        if (parsed.length > 0) {
-          setMedicines(parsed);
+        const raw = appointment.prescription.trim();
+        let parsed: MedicineRow[] = [];
+
+        // Check if stored as JSON
+        if (raw.startsWith('[') || raw.startsWith('{')) {
+          try {
+            const jsonArr = JSON.parse(raw);
+            if (Array.isArray(jsonArr)) {
+              parsed = jsonArr.map((m: any, idx: number) => ({
+                id: String(idx + 1),
+                name: m.name || (typeof m === 'string' ? m : ''),
+                form: m.form || 'Tab.',
+                dosage: m.dosage || '1-0-1',
+                timing: m.timing || 'After Food',
+                duration: m.duration || '5 Days',
+                instructions: m.instructions || '',
+              }));
+            }
+          } catch {
+            // fallback to line parsing
+          }
         }
+
+        if (parsed.length === 0) {
+          const rawLines = raw.split('\n').filter(Boolean);
+          parsed = rawLines.map((line, idx) => {
+            const clean = line.replace(/^[•\-\*0-9\.]+\s*/, '');
+            const parts = clean.split('—').map((p) => p.trim());
+            const subParts = parts.length === 1 ? clean.split('-').map((p) => p.trim()) : parts;
+            return {
+              id: String(idx + 1),
+              name: subParts[0] || clean,
+              form: (subParts[0] || '').split(' ')[0] || 'Tab.',
+              dosage: subParts[1] || '1-0-1',
+              timing: subParts[2] || 'After Food',
+              duration: subParts[3] || '5 Days',
+              instructions: subParts[4] || '',
+            };
+          });
+        }
+
+        setMedicines(parsed);
+      } else {
+        setMedicines([]);
       }
     }
-  }, [appointment, patient, settings, isOpen]);
+  }, [appointment, activePatient, settings, isOpen]);
 
   // Convert medicines array into standard Rx formatted text
   const getFormattedPrescriptionText = () => {
@@ -366,7 +403,6 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
   const handleAddMedicine = (preset?: typeof POPULAR_MEDICINE_PRESETS[0] | TreatmentProtocol['medicines'][0]) => {
     if (isRxReadOnly) return;
     setMedicines((prev) => [
-      ...prev,
       {
         id: String(Date.now()),
         name: preset?.name || '',
@@ -376,6 +412,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
         duration: preset?.duration || '5 Days',
         instructions: preset?.instructions || '',
       },
+      ...prev
     ]);
   };
 
@@ -393,7 +430,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
     );
   };
 
-  // Save consultation mutation
+  // Save consultation mutation to Database
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!appointment) return;
@@ -417,6 +454,11 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       queryClient.invalidateQueries({ queryKey: ['queue-appointments'] });
       queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] });
+      if (appointment?.patientId) {
+        queryClient.invalidateQueries({ queryKey: ['patient', appointment.patientId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
       if (onSaved) onSaved();
     },
   });
@@ -452,9 +494,9 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
         {/* ========================================================================= */}
         {/* 1. TOP EXECUTIVE APP BAR */}
         {/* ========================================================================= */}
-        <div className="bg-slate-950 text-white px-5 py-3 flex items-center justify-between border-b border-slate-800 shrink-0">
+        <div className="bg-[#0B2533] text-white px-5 py-3 flex items-center justify-between border-b border-zinc-800 shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-teal-500/20 text-teal-400 rounded-xl border border-teal-500/30">
+            <div className="p-2 bg-teal-500/15 text-teal-400 rounded-xl border border-teal-500/30">
               <Stethoscope className="w-5 h-5" />
             </div>
             <div>
@@ -467,26 +509,26 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                     <Lock className="w-3 h-3 text-amber-400" /> Reception / Staff Intake Mode (Vitals Editable • Rx Protected)
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-500/20 text-teal-300 border border-teal-500/40 uppercase tracking-wider">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-500/15 text-teal-400 border border-teal-500/30 uppercase tracking-wider">
                     Smart Auto-Rx Active
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400 font-medium">
+              <p className="text-xs text-zinc-400 font-medium">
                 Patient: <strong className="text-white font-bold">{appointment.patientName}</strong> • Attending:{' '}
-                <strong className="text-teal-300">Dr. {appointment.doctorName || doctor?.name}</strong>
+                <strong className="text-teal-400">Dr. {appointment.doctorName || doctor?.name}</strong>
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {/* View Mode Switcher */}
-            <div className="hidden md:flex bg-slate-900 p-1 rounded-xl border border-slate-800">
+            <div className="hidden md:flex bg-[#0B2533] p-1 rounded-xl border border-zinc-800">
               <button
                 type="button"
                 onClick={() => setViewLayout('split')}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewLayout === 'split' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  viewLayout === 'split' ? 'bg-teal-600 text-white shadow-xs' : 'text-zinc-400 hover:text-white'
                 }`}
                 title="Side-by-side Composer and Live A4 Letterhead"
               >
@@ -498,7 +540,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                 type="button"
                 onClick={() => setViewLayout('notepad')}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewLayout === 'notepad' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  viewLayout === 'notepad' ? 'bg-teal-600 text-white shadow-xs' : 'text-sky-200/80 hover:text-white'
                 }`}
               >
                 <Edit3 className="w-3.5 h-3.5" />
@@ -509,7 +551,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                 type="button"
                 onClick={() => setViewLayout('preview')}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewLayout === 'preview' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  viewLayout === 'preview' ? 'bg-teal-600 text-white shadow-xs' : 'text-sky-200/80 hover:text-white'
                 }`}
               >
                 <Eye className="w-3.5 h-3.5" />
@@ -521,7 +563,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
               variant="outline"
               size="sm"
               onClick={handlePrint}
-              className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white border-0 font-extrabold text-xs rounded-xl shadow-xs px-3.5 flex items-center gap-1.5 cursor-pointer"
+              className="h-9 bg-teal-600 hover:bg-teal-600 text-white border-0 font-extrabold text-xs rounded-xl shadow-xs px-3.5 flex items-center gap-1.5 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Print Rx</span>
@@ -530,7 +572,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-2 text-sky-200 hover:text-white rounded-xl hover:bg-teal-900/60 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -551,10 +593,10 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
               }`}
             >
               {/* DATE & TIME OF CONSULTATION */}
-              <div className="bg-white dark:bg-slate-900 border border-teal-200/90 dark:border-teal-900/60 p-4 rounded-2xl shadow-xs space-y-2.5">
+              <div className="bg-white dark:bg-slate-900 border border-sky-200/90 dark:border-teal-900/60 p-4 rounded-2xl shadow-xs space-y-2.5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center space-x-2.5">
-                    <div className="p-2 rounded-xl bg-teal-50 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
+                    <div className="p-2 rounded-xl bg-sky-50 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 border border-sky-200 dark:border-teal-800">
                       <Calendar className="w-4 h-4" />
                     </div>
                     <div>
@@ -596,14 +638,14 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
               </div>
 
               {/* PATIENT VITALS STRIP (EDITABLE BY RECEPTION & ASSISTANT) */}
-              <div className="bg-white dark:bg-slate-900 border-2 border-emerald-300/80 dark:border-emerald-800/80 p-4 rounded-2xl shadow-xs space-y-3">
+              <div className="bg-white dark:bg-slate-900 border-2 border-teal-300/80 dark:border-teal-800/80 p-4 rounded-2xl shadow-xs space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                     <Activity className="w-4 h-4 text-rose-500" />
                     <span>Patient Vitals & Intake Metrics</span>
                   </h4>
                   {isRxReadOnly ? (
-                    <span className="text-[10.5px] font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                    <span className="text-[10.5px] font-extrabold text-teal-800 dark:text-teal-300 bg-sky-100 dark:bg-teal-950/80 px-2.5 py-0.5 rounded-full border border-teal-300 dark:border-teal-800">
                       ⚡ Vitals Input Active (Reception / Assistant)
                     </span>
                   ) : (
@@ -619,14 +661,14 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                         placeholder="120"
                         value={bpSystolic}
                         onChange={(e) => setBpSystolic(e.target.value)}
-                        className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-emerald-300 dark:border-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                        className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-teal-300 dark:border-teal-800 focus:ring-2 focus:ring-teal-600"
                       />
                       <span className="text-slate-400">/</span>
                       <Input
                         placeholder="80"
                         value={bpDiastolic}
                         onChange={(e) => setBpDiastolic(e.target.value)}
-                        className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-emerald-300 dark:border-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                        className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-teal-300 dark:border-teal-800 focus:ring-2 focus:ring-teal-600"
                       />
                     </div>
                   </div>
@@ -637,7 +679,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                       placeholder="72"
                       value={pulse}
                       onChange={(e) => setPulse(e.target.value)}
-                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-emerald-300 dark:border-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-teal-300 dark:border-teal-800 focus:ring-2 focus:ring-teal-600"
                     />
                   </div>
 
@@ -647,7 +689,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                       placeholder="98"
                       value={spo2}
                       onChange={(e) => setSpo2(e.target.value)}
-                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-emerald-300 dark:border-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-teal-300 dark:border-teal-800 focus:ring-2 focus:ring-teal-600"
                     />
                   </div>
 
@@ -657,7 +699,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                       placeholder="98.6"
                       value={temperature}
                       onChange={(e) => setTemperature(e.target.value)}
-                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-emerald-300 dark:border-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-teal-300 dark:border-teal-800 focus:ring-2 focus:ring-teal-600"
                     />
                   </div>
 
@@ -667,7 +709,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                       placeholder="70"
                       value={weight}
                       onChange={(e) => setWeight(e.target.value)}
-                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-emerald-300 dark:border-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-teal-300 dark:border-teal-800 focus:ring-2 focus:ring-teal-600"
                     />
                   </div>
 
@@ -677,7 +719,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                       placeholder="170"
                       value={height}
                       onChange={(e) => setHeight(e.target.value)}
-                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-emerald-300 dark:border-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                      className="h-8 text-xs text-center font-mono font-bold rounded-lg bg-slate-50 dark:bg-slate-800 border-teal-300 dark:border-teal-800 focus:ring-2 focus:ring-teal-600"
                     />
                   </div>
                 </div>
@@ -690,7 +732,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-black text-slate-950 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                       <Activity className="w-3.5 h-3.5 text-teal-600" />
-                      <span>Chief Complaints & Presenting Symptoms</span>
+                      <span>Chief Complaints & Symptoms</span>
                     </Label>
                     {isRxReadOnly && (
                       <span className="text-[10px] font-extrabold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded flex items-center gap-1">
@@ -706,7 +748,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                     readOnly={isRxReadOnly}
                     disabled={isRxReadOnly}
                     placeholder={isRxReadOnly ? 'No chief symptoms entered' : 'Enter patient complaints, duration, fever spike, pain localized...'}
-                    className={`w-full text-xs font-medium p-3 rounded-xl border border-slate-200 dark:border-slate-750 focus:ring-2 focus:ring-teal-500 focus:outline-none ${
+                    className={`w-full text-xs font-medium p-3 rounded-xl border border-slate-200 dark:border-slate-750 focus:ring-2 focus:ring-teal-600 focus:outline-none ${
                       isRxReadOnly ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 cursor-not-allowed' : 'bg-slate-50/60 dark:bg-slate-800'
                     }`}
                   />
@@ -721,7 +763,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                           onClick={() =>
                             setSymptoms((prev) => (prev ? `${prev}\n• ${sym}` : `• ${sym}`))
                           }
-                          className="text-[10.5px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                          className="text-[10.5px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 hover:text-teal-700 dark:hover:bg-teal-950 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
                         >
                           + {sym}
                         </button>
@@ -731,9 +773,9 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                 </div>
 
                 {/* Clinical Assessment & Diagnosis */}
-                <div className="bg-white dark:bg-slate-900 border border-teal-200/90 dark:border-teal-900/60 p-4 rounded-2xl shadow-xs space-y-2.5">
+                <div className="bg-white dark:bg-slate-900 border border-sky-200/90 dark:border-teal-900/60 p-4 rounded-2xl shadow-xs space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-black text-teal-950 dark:text-teal-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <Label className="text-xs font-black text-teal-950 dark:text-sky-200 uppercase tracking-wider flex items-center gap-1.5">
                       <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
                       <span>Clinical Assessment & Diagnosis (ICD)</span>
                     </Label>
@@ -751,8 +793,8 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                     readOnly={isRxReadOnly}
                     disabled={isRxReadOnly}
                     placeholder={isRxReadOnly ? 'Doctor clinical diagnosis view only' : 'Enter primary clinical diagnosis (e.g. Acute Viral Fever, URTI, Gastroenteritis)...'}
-                    className={`w-full text-xs font-extrabold p-3 rounded-xl border border-teal-200 dark:border-teal-900/60 text-teal-950 dark:text-teal-100 focus:ring-2 focus:ring-teal-500 focus:outline-none ${
-                      isRxReadOnly ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 cursor-not-allowed' : 'bg-teal-50/40 dark:bg-teal-950/20'
+                    className={`w-full text-xs font-extrabold p-3 rounded-xl border border-sky-200 dark:border-teal-900/60 text-teal-950 dark:text-sky-100 focus:ring-2 focus:ring-teal-600 focus:outline-none ${
+                      isRxReadOnly ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 cursor-not-allowed' : 'bg-sky-50/40 dark:bg-teal-950/20'
                     }`}
                   />
 
@@ -768,7 +810,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                               prev ? `${prev}\n${diag.label} (${diag.code})` : `${diag.label} (${diag.code})`
                             )
                           }
-                          className="text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-teal-50 text-teal-900 dark:bg-teal-950/60 dark:text-teal-200 hover:bg-teal-100 border border-teal-200 dark:border-teal-800 transition-all cursor-pointer"
+                          className="text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-sky-50 text-teal-900 dark:bg-teal-950/60 dark:text-sky-200 hover:bg-sky-100 border border-sky-200 dark:border-teal-800 transition-all cursor-pointer"
                         >
                           + {diag.label}
                         </button>
@@ -780,18 +822,18 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
 
               {/* SMART DIAGNOSIS-TO-MEDICINE AUTO-SUGGESTION ENGINE (DOCTORS ONLY) */}
               {matchedProtocol && !isRxReadOnly && (
-                <div className="bg-gradient-to-r from-teal-500/10 via-emerald-500/10 to-teal-500/10 border-2 border-teal-500/40 rounded-2xl p-4 space-y-3 animate-in fade-in duration-300 shadow-sm">
+                <div className="bg-gradient-to-r from-teal-600/10 via-teal-600/10 to-teal-600/10 border-2 border-teal-600/40 rounded-2xl p-4 space-y-3 animate-in fade-in duration-300 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center space-x-2.5">
-                      <div className="p-2 bg-teal-500 text-white rounded-xl shadow-xs">
+                      <div className="p-2 bg-teal-600 text-white rounded-xl shadow-xs">
                         <Zap className="w-4 h-4 fill-white" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-black text-teal-950 dark:text-teal-100 uppercase tracking-wider">
+                          <h4 className="text-xs font-black text-teal-950 dark:text-sky-100 uppercase tracking-wider">
                             Smart Rx Engine Match: {matchedProtocol.title}
                           </h4>
-                          <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 uppercase tracking-wider">
+                          <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black bg-sky-100 text-teal-800 border border-teal-300 uppercase tracking-wider">
                             Recommended Treatment Protocol
                           </span>
                         </div>
@@ -813,7 +855,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                   </div>
 
                   {/* Individual Medicine Chips */}
-                  <div className="pt-1 border-t border-teal-200/80 dark:border-teal-800/80">
+                  <div className="pt-1 border-t border-sky-200/80 dark:border-teal-800/80">
                     <span className="text-[10px] font-black text-teal-800 dark:text-teal-300 uppercase tracking-wider block mb-1.5">
                       Or Add Individual Suggested Drugs:
                     </span>
@@ -823,7 +865,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                           key={med.name}
                           type="button"
                           onClick={() => handleAddMedicine(med)}
-                          className="bg-white dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950 border border-teal-300 dark:border-teal-700 rounded-xl px-2.5 py-1 text-xs font-bold text-teal-900 dark:text-teal-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                          className="bg-white dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-teal-950 border border-teal-300 dark:border-teal-700 rounded-xl px-2.5 py-1 text-xs font-bold text-teal-900 dark:text-sky-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                         >
                           <Plus className="w-3.5 h-3.5 text-teal-600" />
                           <span>{med.name}</span>
@@ -877,7 +919,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                           key={preset.name}
                           type="button"
                           onClick={() => handleAddMedicine(preset)}
-                          className="text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-teal-50 hover:text-teal-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-teal-950 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                          className="text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-sky-50 hover:text-teal-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-teal-950 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
                         >
                           + {preset.name.split(' ')[1]} {preset.dosage}
                         </button>
@@ -905,7 +947,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                             onClick={() => handleAddMedicine()}
                             className="bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-2xs mt-1 cursor-pointer"
                           >
-                            + Add First Medicine
+                            Add First Medicine
                           </Button>
                         </>
                       )}
@@ -1096,7 +1138,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                     disabled={isRxReadOnly}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder={isRxReadOnly ? 'No special advice recorded by doctor' : 'Enter dietary precautions, hydration advice, red flags...'}
-                    className={`w-full text-xs font-medium p-3 rounded-xl border border-slate-200 dark:border-slate-750 focus:ring-2 focus:ring-teal-500 focus:outline-none ${
+                    className={`w-full text-xs font-medium p-3 rounded-xl border border-slate-200 dark:border-slate-750 focus:ring-2 focus:ring-teal-600 focus:outline-none ${
                       isRxReadOnly ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 cursor-not-allowed' : 'bg-slate-50/60 dark:bg-slate-800'
                     }`}
                   />
@@ -1119,7 +1161,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                 </div>
 
                 {/* Follow Up Date */}
-                <div className="bg-white dark:bg-slate-900 border border-teal-200/90 dark:border-teal-900/60 p-4 rounded-2xl shadow-xs space-y-2.5">
+                <div className="bg-white dark:bg-slate-900 border border-sky-200/90 dark:border-teal-900/60 p-4 rounded-2xl shadow-xs space-y-2.5">
                   <Label className="text-xs font-black text-teal-950 dark:text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-teal-600" />
                     <span>Follow-Up Review Date</span>
@@ -1146,7 +1188,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                             d.setDate(d.getDate() + btn.days);
                             setFollowUpDate(d.toISOString().split('T')[0]);
                           }}
-                          className="text-[10.5px] font-bold py-1 px-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-900 dark:text-teal-300 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 transition-all cursor-pointer text-center"
+                          className="text-[10.5px] font-bold py-1 px-1 rounded-lg bg-sky-50 dark:bg-teal-950/60 text-teal-900 dark:text-teal-300 border border-sky-200 dark:border-teal-800 hover:bg-sky-100 transition-all cursor-pointer text-center"
                         >
                           {btn.label}
                         </button>
@@ -1170,7 +1212,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
               {/* Header Bar above letter */}
               <div className="w-full max-w-[210mm] flex items-center justify-between mb-3 bg-slate-900 text-white px-4 py-2 rounded-2xl shadow-xs">
                 <div className="flex items-center space-x-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping" />
                   <span className="text-xs font-black uppercase tracking-wider">
                     Live Official A4 Prescription Letter
                   </span>
@@ -1204,7 +1246,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
                   <EMRPrintDocument
                     mode={printMode}
                     appointment={liveAppointment}
-                    patient={patient}
+                    patient={activePatient}
                     doctor={doctor}
                     clinic={clinic}
                     settings={settings}
@@ -1234,7 +1276,7 @@ export const DoctorPrescriptionNotepadModal: React.FC<DoctorPrescriptionNotepadM
               variant="outline"
               size="sm"
               onClick={handlePrint}
-              className="h-10 text-xs font-black rounded-xl border-teal-300 text-teal-800 dark:text-teal-300 hover:bg-teal-50 px-4 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              className="h-10 text-xs font-black rounded-xl border-teal-300 text-teal-800 dark:text-teal-300 hover:bg-sky-50 px-4 flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <Printer className="w-4 h-4 text-teal-600" />
               <span>Print A4 Prescription Letter</span>

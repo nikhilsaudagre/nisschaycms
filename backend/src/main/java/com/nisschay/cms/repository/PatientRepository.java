@@ -17,15 +17,20 @@ public interface PatientRepository extends JpaRepository<Patient, UUID> {
 
     Optional<Patient> findByIdAndClinicId(UUID id, UUID clinicId);
 
+    Optional<Patient> findByClinicIdAndPid(UUID clinicId, String pid);
+
     Page<Patient> findByClinicId(UUID clinicId, Pageable pageable);
 
     List<Patient> findByClinicId(UUID clinicId);
+
+    long countByClinicId(UUID clinicId);
 
     long countByClinicIdAndCreatedAtGreaterThanEqual(UUID clinicId, java.time.OffsetDateTime start);
 
     @Query("SELECT p FROM Patient p WHERE p.clinic.id = :clinicId AND " +
            "(LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "p.phone LIKE CONCAT('%', :search, '%'))")
+           "p.phone LIKE CONCAT('%', :search, '%') OR " +
+           "(p.pid IS NOT NULL AND LOWER(p.pid) LIKE LOWER(CONCAT('%', :search, '%'))))")
     Page<Patient> searchPatients(
             @Param("clinicId") UUID clinicId,
             @Param("search") String search,

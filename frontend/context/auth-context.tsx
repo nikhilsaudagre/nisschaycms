@@ -8,11 +8,13 @@ import { User, AuthState } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextType extends AuthState {
-  login: (input: LoginInput) => Promise<void>;
-  registerClinic: (input: ClinicRegisterInput) => Promise<void>;
+  login: (input: LoginInput) => Promise<User>;
+  registerClinic: (input: ClinicRegisterInput) => Promise<User>;
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<string>;
   resetPassword: (input: ResetPasswordInput) => Promise<void>;
+  updateUser: (updatedData: Partial<User>) => void;
+  refreshUser: () => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,9 +81,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       handleClientLogout();
     };
 
+    // 3. Listen to cross-component & cross-tab user profile update events
+    const handleUserUpdatedEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<User>;
+      if (customEvent.detail) {
+        setState((prev) => ({ ...prev, user: customEvent.detail }));
+      }
+    };
+
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === 'user' && e.newValue) {
+        try {
+          const updated = JSON.parse(e.newValue) as User;
+          setState((prev) => ({ ...prev, user: updated }));
+        } catch {}
+      }
+    };
+
     window.addEventListener('auth:logout', handleLogoutEvent);
+    window.addEventListener('auth:user-updated', handleUserUpdatedEvent);
+    window.addEventListener('storage', handleStorageEvent);
+
     return () => {
       window.removeEventListener('auth:logout', handleLogoutEvent);
+      window.removeEventListener('auth:user-updated', handleUserUpdatedEvent);
+      window.removeEventListener('storage', handleStorageEvent);
     };
   }, []);
 
@@ -100,14 +124,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     router.push('/login');
   };
 
-  const login = async (input: LoginInput) => {
+  const updateUser = (updatedData: Partial<User>) => {
+    setState((prev) => {
+      if (!prev.user) return prev;
+      const newUser: User = { ...prev.user, ...updatedData };
+      localStorage.setItem('user', JSON.stringify(newUser));
+      window.dispatchEvent(new CustomEvent('auth:user-updated', { detail: newUser }));
+      return { ...prev, user: newUser };
+    });
+  };
+
+  const refreshUser = async (): Promise<User> => {
+    try {
+      const response = await apiClient.get('/users/me');
+      const verifiedUser = response.data as User;
+      localStorage.setItem('user', JSON.stringify(verifiedUser));
+      setState((prev) => ({ ...prev, user: verifiedUser }));
+      window.dispatchEvent(new CustomEvent('auth:user-updated', { detail: verifiedUser }));
+      return verifiedUser;
+    } catch (err) {
+      console.error('Failed to refresh user profile', err);
+      throw err;
+    }
+  };
+
+  const login = async (input: LoginInput): Promise<User> => {
     queryClient.clear();
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
       const response = await apiClient.post('/auth/login', input);
-      const { accessToken, refreshToken, userId, name, email, role, clinicId, clinicName } = response.data;
+      const { accessToken, refreshToken, userId, name, email, role, clinicId, clinicName, profilePictureUrl } = response.data;
 
-      const user: User = { id: userId, name, email, role, clinicId, clinicName };
+      const user: User = { id: userId, name, email, role, clinicId, clinicName, profilePictureUrl };
 
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
@@ -121,21 +169,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading: false,
       });
 
-      router.push('/dashboard');
+      return user;
     } catch (error: any) {
       setState((prev) => ({ ...prev, isLoading: false }));
       throw error.response?.data?.message || error.response?.data?.error || 'Invalid credentials';
     }
   };
 
-  const registerClinic = async (input: ClinicRegisterInput) => {
+  const registerClinic = async (input: ClinicRegisterInput): Promise<User> => {
     queryClient.clear();
     setState((prev) => ({ ...prev, isLoading: true }));
     try {
       const response = await apiClient.post('/auth/register-clinic', input);
-      const { accessToken, refreshToken, userId, name, email, role, clinicId, clinicName } = response.data;
+      const { accessToken, refreshToken, userId, name, email, role, clinicId, clinicName, profilePictureUrl } = response.data;
 
-      const user: User = { id: userId, name, email, role, clinicId, clinicName };
+      const user: User = { id: userId, name, email, role, clinicId, clinicName, profilePictureUrl };
 
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
@@ -149,7 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading: false,
       });
 
-      router.push('/dashboard');
+      return user;
     } catch (error: any) {
       setState((prev) => ({ ...prev, isLoading: false }));
       throw error.response?.data?.message || error.response?.data?.error || 'Failed to register clinic';
@@ -189,7 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, registerClinic, logout, forgotPassword, resetPassword }}>
+    <AuthContext.Provider value={{ ...state, login, registerClinic, logout, forgotPassword, resetPassword, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

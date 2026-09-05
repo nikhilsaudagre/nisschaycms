@@ -52,9 +52,9 @@ public class UserDetailsImpl implements UserDetails {
                 user.getName(),
                 user.getEmail(),
                 user.getPasswordHash(),
-                user.getClinic().getId(),
-                user.getClinic().getName(),
-                user.getRole().getId(),
+                user.getClinic() != null ? user.getClinic().getId() : null,
+                user.getClinic() != null ? user.getClinic().getName() : "Nisschay Clinic",
+                user.getRole() != null ? user.getRole().getId() : "DOCTOR",
                 authorities
         );
     }

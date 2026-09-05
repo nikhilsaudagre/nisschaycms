@@ -79,12 +79,12 @@ export default function ImageUploadButton({
       >
         {uploading ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-500" />
             Uploading...
           </>
         ) : success ? (
           <>
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
             Uploaded!
           </>
         ) : (

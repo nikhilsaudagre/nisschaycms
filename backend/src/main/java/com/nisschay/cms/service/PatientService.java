@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -31,12 +32,17 @@ public class PatientService {
                 .orElseThrow(() -> new ResourceNotFoundException("Clinic not found with id: " + clinicId));
 
         String patientName = StringUtils.hasText(request.getName()) ? request.getName().trim() : "Patient (" + request.getPhone() + ")";
+        LocalDate dob = request.getDateOfBirth() != null ? request.getDateOfBirth() : java.time.LocalDate.now().minusYears(30);
+
+        long count = patientRepository.countByClinicId(clinicId);
+        String generatedPid = String.format("PID-%d-%04d", LocalDate.now().getYear(), count + 1);
 
         Patient patient = Patient.builder()
                 .clinic(clinic)
+                .pid(generatedPid)
                 .name(patientName)
                 .gender(StringUtils.hasText(request.getGender()) ? request.getGender() : "UNSPECIFIED")
-                .dateOfBirth(request.getDateOfBirth())
+                .dateOfBirth(dob)
                 .phone(request.getPhone())
                 .email(request.getEmail())
                 .bloodGroup(request.getBloodGroup())
@@ -69,25 +75,31 @@ public class PatientService {
         String patientName = StringUtils.hasText(request.getName()) ? request.getName().trim() : "Patient (" + request.getPhone() + ")";
 
         patient.setName(patientName);
-        patient.setGender(StringUtils.hasText(request.getGender()) ? request.getGender() : "UNSPECIFIED");
-        patient.setDateOfBirth(request.getDateOfBirth());
-        patient.setPhone(request.getPhone());
-        patient.setEmail(request.getEmail());
-        patient.setBloodGroup(request.getBloodGroup());
-        patient.setAddress(request.getAddress());
-        patient.setCity(request.getCity());
-        patient.setPincode(request.getPincode());
-        patient.setGovernmentId(request.getGovernmentId());
-        patient.setHeightCm(request.getHeightCm());
-        patient.setWeightKg(request.getWeightKg());
-        patient.setCurrentMedications(request.getCurrentMedications());
-        patient.setReferralSource(request.getReferralSource());
-        patient.setInsuranceProvider(request.getInsuranceProvider());
-        patient.setInsurancePolicyNo(request.getInsurancePolicyNo());
-        patient.setAllergies(request.getAllergies());
-        patient.setMedicalHistory(request.getMedicalHistory());
-        patient.setEmergencyContactName(request.getEmergencyContactName());
-        patient.setEmergencyContactPhone(request.getEmergencyContactPhone());
+        if (StringUtils.hasText(request.getGender())) {
+            patient.setGender(request.getGender());
+        }
+        if (request.getDateOfBirth() != null) {
+            patient.setDateOfBirth(request.getDateOfBirth());
+        }
+        if (StringUtils.hasText(request.getPhone())) {
+            patient.setPhone(request.getPhone());
+        }
+        if (request.getEmail() != null) patient.setEmail(request.getEmail());
+        if (request.getBloodGroup() != null) patient.setBloodGroup(request.getBloodGroup());
+        if (request.getAddress() != null) patient.setAddress(request.getAddress());
+        if (request.getCity() != null) patient.setCity(request.getCity());
+        if (request.getPincode() != null) patient.setPincode(request.getPincode());
+        if (request.getGovernmentId() != null) patient.setGovernmentId(request.getGovernmentId());
+        if (request.getHeightCm() != null) patient.setHeightCm(request.getHeightCm());
+        if (request.getWeightKg() != null) patient.setWeightKg(request.getWeightKg());
+        if (request.getCurrentMedications() != null) patient.setCurrentMedications(request.getCurrentMedications());
+        if (request.getReferralSource() != null) patient.setReferralSource(request.getReferralSource());
+        if (request.getInsuranceProvider() != null) patient.setInsuranceProvider(request.getInsuranceProvider());
+        if (request.getInsurancePolicyNo() != null) patient.setInsurancePolicyNo(request.getInsurancePolicyNo());
+        if (request.getAllergies() != null) patient.setAllergies(request.getAllergies());
+        if (request.getMedicalHistory() != null) patient.setMedicalHistory(request.getMedicalHistory());
+        if (request.getEmergencyContactName() != null) patient.setEmergencyContactName(request.getEmergencyContactName());
+        if (request.getEmergencyContactPhone() != null) patient.setEmergencyContactPhone(request.getEmergencyContactPhone());
 
         Patient saved = patientRepository.save(patient);
         return PatientResponse.build(saved);

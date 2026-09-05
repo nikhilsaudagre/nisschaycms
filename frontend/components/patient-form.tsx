@@ -231,16 +231,16 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
   return (
     <div className="max-w-4xl mx-auto">
-      <form onSubmit={handleSubmit(onSubmit, onError)} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+      <form onSubmit={handleSubmit(onSubmit, onError)} className="bg-white border border-[#E8EEF2] rounded-2xl shadow-2xs overflow-hidden">
         
         {/* Form Header */}
-        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+        <div className="px-5 sm:px-6 py-4.5 border-b border-[#E8EEF2] bg-[#F6F9FB]/60 flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-base sm:text-lg font-bold text-[#172B34] tracking-tight">
               {isEditMode ? 'Edit Patient Profile' : 'New Patient Registration'}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-normal mt-0.5">
-              Enter patient demographics and clinical history. Mobile phone is required as primary identification.
+            <p className="text-xs text-[#567781] font-normal mt-0.5">
+              Enter patient demographics and clinical history. Mobile phone is primary unique identification.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
                 type="button"
                 variant="ghost"
                 onClick={onCancel}
-                className="h-9 text-xs font-medium text-slate-600 dark:text-slate-400"
+                className="h-9 text-xs font-semibold text-[#567781] hover:text-[#172B34] cursor-pointer"
               >
                 Cancel
               </Button>
@@ -257,7 +257,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
             <Button
               type="submit"
               disabled={isSubmitting || !watchPhone}
-              className="h-9 bg-teal-600 hover:bg-teal-700 text-white font-medium text-xs px-5 rounded-lg transition-all shadow-2xs border-0 cursor-pointer"
+              className="h-9 bg-[#087F8C] hover:bg-[#076b77] text-white font-semibold text-xs px-5 rounded-xl transition-all shadow-md shadow-[#087F8C]/20 border-0 cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? 'Saving...' : isEditMode ? 'Save Changes' : 'Save Patient File'}
             </Button>
@@ -266,72 +266,75 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
         {/* Form Error Banner */}
         {error && (
-          <div className="mx-6 mt-6 p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-700 dark:text-rose-300 font-medium flex items-center justify-between">
+          <div className="mx-5 sm:mx-6 mt-5 p-3.5 bg-[#D64545]/10 border border-[#D64545]/20 rounded-xl text-xs text-[#D64545] font-semibold flex items-center justify-between shadow-2xs">
             <div className="flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-[#D64545] shrink-0" />
               <span>{error}</span>
             </div>
-            <button type="button" onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600 p-0.5">
+            <button type="button" onClick={() => setError(null)} className="text-[#D64545] hover:text-[#D64545]/80 p-0.5 cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        <div className="p-6 space-y-8">
+        <div className="p-5 sm:p-6 space-y-6">
           
           {/* SECTION 1: DEMOGRAPHICS & CONTACT */}
           <div className="space-y-4">
-            <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
-              1. Demographics & Contact
+            <div className="text-xs font-bold text-[#567781] uppercase tracking-wider border-b border-[#E8EEF2] pb-2 flex items-center gap-2">
+              <span className="p-1 rounded-md bg-[#087F8C]/10 text-[#087F8C]">
+                <User className="w-3.5 h-3.5" />
+              </span>
+              <span>1. Demographics & Contact</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Patient Full Name (First Field) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Patient Full Name */}
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Label htmlFor="name" className="text-xs font-bold text-[#172B34]">
                   Full Name
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                   <Input
                     id="name"
                     placeholder="e.g. Ramesh Chandra"
-                    className="pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                    className="pl-9 h-10 text-xs font-semibold border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                     {...register('name')}
                   />
                 </div>
               </div>
 
-              {/* Mobile Phone Number (Required Unique ID) */}
+              {/* Mobile Phone Number */}
               <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                <Label htmlFor="phone" className="text-xs font-bold text-[#172B34] flex items-center gap-1">
                   <span>Mobile Phone Number</span>
-                  <span className="text-rose-500 font-bold">*</span>
+                  <span className="text-[#D64545] font-bold">*</span>
                 </Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                   <Input
                     id="phone"
                     type="tel"
                     placeholder="e.g. 9876543210"
-                    className={`pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg ${
-                      errors.phone ? 'border-rose-500 focus-visible:ring-rose-500' : 'focus-visible:ring-teal-600'
+                    className={`pl-9 h-10 text-xs font-mono font-bold rounded-xl bg-[#F6F9FB] text-[#172B34] placeholder-[#567781] ${
+                      errors.phone ? 'border-[#D64545] focus:border-[#D64545]' : 'border-[#E8EEF2] focus:border-[#087F8C]'
                     }`}
                     {...register('phone')}
                   />
                 </div>
                 {errors.phone ? (
-                  <p className="text-rose-600 text-[11px] font-medium">{errors.phone.message}</p>
+                  <p className="text-[#D64545] text-[11px] font-semibold">{errors.phone.message}</p>
                 ) : (
-                  <p className="text-[11px] text-slate-400">Primary identifier for patient lookup and SMS</p>
+                  <p className="text-[11px] text-[#567781]">Primary identifier for patient lookup and SMS</p>
                 )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-1">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
               {/* Gender */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                <Label className="text-xs font-bold text-[#172B34] block">
                   Gender
                 </Label>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -344,10 +347,10 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
                       key={g.id}
                       type="button"
                       onClick={() => setValue('gender', watchGender === g.id ? '' : g.id, { shouldValidate: true })}
-                      className={`h-10 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                      className={`h-10 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                         watchGender === g.id
-                          ? 'bg-slate-900 text-white border-slate-900 dark:bg-teal-600 dark:border-teal-600'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                          ? 'bg-[#087F8C] text-white border-[#087F8C] shadow-2xs'
+                          : 'bg-[#F6F9FB] border-[#E8EEF2] text-[#567781] hover:text-[#172B34] hover:bg-white'
                       }`}
                     >
                       {g.label}
@@ -358,7 +361,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
               {/* Age */}
               <div className="space-y-1.5">
-                <Label htmlFor="age" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Label htmlFor="age" className="text-xs font-bold text-[#172B34]">
                   Age (Years)
                 </Label>
                 <Input
@@ -366,7 +369,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
                   type="text"
                   inputMode="numeric"
                   placeholder="e.g. 45"
-                  className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="h-10 text-xs font-bold border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34]"
                   value={age}
                   onChange={handleAgeChange}
                 />
@@ -374,15 +377,15 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
               {/* Date of Birth */}
               <div className="space-y-1.5">
-                <Label htmlFor="dateOfBirth" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Label htmlFor="dateOfBirth" className="text-xs font-bold text-[#172B34]">
                   Date of Birth
                 </Label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                   <Input
                     id="dateOfBirth"
                     type="date"
-                    className="pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                    className="pl-9 h-10 text-xs font-semibold border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34]"
                     {...register('dateOfBirth')}
                   />
                 </div>
@@ -391,16 +394,16 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
             {/* Email Address */}
             <div className="space-y-1.5 pt-1">
-              <Label htmlFor="email" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Email Address <span className="text-slate-400 font-normal">(Optional)</span>
+              <Label htmlFor="email" className="text-xs font-bold text-[#172B34]">
+                Email Address <span className="text-[#567781] font-normal">(Optional)</span>
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="e.g. ramesh@example.com"
-                  className="pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="pl-9 h-10 text-xs border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                   {...register('email')}
                 />
               </div>
@@ -409,60 +412,63 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
           {/* SECTION 2: ADDRESS & IDENTITY */}
           <div className="space-y-4">
-            <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
-              2. Address & Identity
+            <div className="text-xs font-bold text-[#567781] uppercase tracking-wider border-b border-[#E8EEF2] pb-2 flex items-center gap-2">
+              <span className="p-1 rounded-md bg-[#087F8C]/10 text-[#087F8C]">
+                <MapPin className="w-3.5 h-3.5" />
+              </span>
+              <span>2. Address & Identity</span>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="address" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Street Address <span className="text-slate-400 font-normal">(Optional)</span>
+              <Label htmlFor="address" className="text-xs font-bold text-[#172B34]">
+                Street Address <span className="text-[#567781] font-normal">(Optional)</span>
               </Label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                 <Input
                   id="address"
                   placeholder="e.g. House No. 42, Sector 15"
-                  className="pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="pl-9 h-10 text-xs border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                   {...register('address')}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="city" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  City / Town <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="city" className="text-xs font-bold text-[#172B34]">
+                  City / Town <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <Input
                   id="city"
                   placeholder="e.g. New Delhi"
-                  className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="h-10 text-xs border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                   {...register('city')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="pincode" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Pincode <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="pincode" className="text-xs font-bold text-[#172B34]">
+                  Pincode <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <Input
                   id="pincode"
                   placeholder="e.g. 110001"
-                  className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="h-10 text-xs font-mono border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                   {...register('pincode')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="governmentId" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Aadhaar / Gov ID <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="governmentId" className="text-xs font-bold text-[#172B34]">
+                  Aadhaar / Gov ID <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <div className="relative">
-                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                  <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                   <Input
                     id="governmentId"
                     placeholder="e.g. 1234 5678 9012"
-                    className="pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                    className="pl-9 h-10 text-xs font-mono border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                     {...register('governmentId')}
                   />
                 </div>
@@ -472,41 +478,44 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
           {/* SECTION 3: CLINICAL BASELINE & HISTORY */}
           <div className="space-y-4">
-            <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
-              3. Clinical Vitals & Medical History
+            <div className="text-xs font-bold text-[#567781] uppercase tracking-wider border-b border-[#E8EEF2] pb-2 flex items-center gap-2">
+              <span className="p-1 rounded-md bg-[#087F8C]/10 text-[#087F8C]">
+                <Heart className="w-3.5 h-3.5" />
+              </span>
+              <span>3. Clinical Vitals & Medical History</span>
             </div>
 
             {/* Height, Weight & BMI Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="heightCm" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Height (cm) <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="heightCm" className="text-xs font-bold text-[#172B34]">
+                  Height (cm) <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <Input
                   id="heightCm"
                   type="number"
                   placeholder="e.g. 170"
-                  className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="h-10 text-xs font-semibold border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34]"
                   {...register('heightCm')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="weightKg" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Weight (kg) <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="weightKg" className="text-xs font-bold text-[#172B34]">
+                  Weight (kg) <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <Input
                   id="weightKg"
                   type="number"
                   placeholder="e.g. 70"
-                  className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="h-10 text-xs font-semibold border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34]"
                   {...register('weightKg')}
                 />
               </div>
 
               <div className="space-y-1.5 flex flex-col justify-end">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Calculated BMI</Label>
-                <div className="h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-center text-xs font-medium text-slate-700 dark:text-slate-300">
+                <Label className="text-xs font-bold text-[#172B34]">Calculated BMI</Label>
+                <div className="h-10 px-3 rounded-xl border border-[#E8EEF2] bg-[#F6F9FB] flex items-center text-xs font-semibold text-[#172B34]">
                   {bmiText ? bmiText : 'Enter Height & Weight'}
                 </div>
               </div>
@@ -514,8 +523,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
             {/* Blood Group */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                Blood Group <span className="text-slate-400 font-normal">(Optional)</span>
+              <Label className="text-xs font-bold text-[#172B34] block">
+                Blood Group <span className="text-[#567781] font-normal">(Optional)</span>
               </Label>
               <div className="grid grid-cols-4 md:grid-cols-8 gap-1.5">
                 {BLOOD_GROUPS.map((bg) => (
@@ -523,10 +532,10 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
                     key={bg}
                     type="button"
                     onClick={() => setValue('bloodGroup', watchBloodGroup === bg ? '' : bg, { shouldValidate: true })}
-                    className={`h-9 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                    className={`h-9 rounded-xl text-xs font-bold font-mono border transition-all cursor-pointer ${
                       watchBloodGroup === bg
-                        ? 'bg-teal-600 text-white border-teal-600'
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                        ? 'bg-[#087F8C] text-white border-[#087F8C] shadow-2xs'
+                        : 'bg-[#F6F9FB] border-[#E8EEF2] text-[#567781] hover:text-[#172B34] hover:bg-white'
                     }`}
                   >
                     {bg}
@@ -537,15 +546,15 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
             {/* Current Daily Medications */}
             <div className="space-y-1.5">
-              <Label htmlFor="currentMedications" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Current Regular Daily Medications <span className="text-slate-400 font-normal">(Optional)</span>
+              <Label htmlFor="currentMedications" className="text-xs font-bold text-[#172B34]">
+                Current Regular Daily Medications <span className="text-[#567781] font-normal">(Optional)</span>
               </Label>
               <div className="relative">
-                <Pill className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                <Pill className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                 <Input
                   id="currentMedications"
                   placeholder="e.g. Tab Metformin 500mg, Tab Amlodipine 5mg"
-                  className="pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="pl-9 h-10 text-xs border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                   {...register('currentMedications')}
                 />
               </div>
@@ -553,10 +562,10 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
             {/* Known Allergies */}
             <div className="space-y-2">
-              <Label htmlFor="allergies" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                Drug & Food Allergies <span className="text-slate-400 font-normal">(Optional)</span>
+              <Label htmlFor="allergies" className="text-xs font-bold text-[#172B34] block">
+                Drug & Food Allergies <span className="text-[#567781] font-normal">(Optional)</span>
               </Label>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {ALLERGY_PRESETS.map((preset) => {
                   const isSelected = watchAllergies?.includes(preset);
                   return (
@@ -564,13 +573,13 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
                       key={preset}
                       type="button"
                       onClick={() => toggleAllergyPreset(preset)}
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-md border transition-all flex items-center gap-1 cursor-pointer ${
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
                         isSelected
-                          ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
-                          : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                          ? 'bg-[#D64545]/10 text-[#D64545] border-[#D64545]/30'
+                          : 'bg-[#F6F9FB] text-[#567781] border-[#E8EEF2] hover:text-[#172B34] hover:bg-white'
                       }`}
                     >
-                      {isSelected ? <Check className="w-3 h-3 text-rose-600" /> : <Plus className="w-3 h-3 text-slate-400" />}
+                      {isSelected ? <Check className="w-3 h-3 text-[#D64545]" /> : <Plus className="w-3 h-3 text-[#567781]" />}
                       <span>{preset}</span>
                     </button>
                   );
@@ -579,17 +588,17 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
               <Input
                 id="allergies"
                 placeholder="e.g. Penicillin, Peanuts (comma separated)"
-                className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                className="h-10 text-xs border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                 {...register('allergies')}
               />
             </div>
 
             {/* Chronic Medical History */}
             <div className="space-y-2">
-              <Label htmlFor="medicalHistory" className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                Chronic Medical History <span className="text-slate-400 font-normal">(Optional)</span>
+              <Label htmlFor="medicalHistory" className="text-xs font-bold text-[#172B34] block">
+                Chronic Medical History <span className="text-[#567781] font-normal">(Optional)</span>
               </Label>
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {HISTORY_PRESETS.map((preset) => {
                   const isSelected = watchHistory?.includes(preset);
                   return (
@@ -597,13 +606,13 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
                       key={preset}
                       type="button"
                       onClick={() => toggleHistoryPreset(preset)}
-                      className={`text-[11px] font-medium px-2.5 py-1 rounded-md border transition-all flex items-center gap-1 cursor-pointer ${
+                      className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
                         isSelected
-                          ? 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800'
-                          : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-100'
+                          ? 'bg-[#087F8C]/10 text-[#087F8C] border-[#087F8C]/30'
+                          : 'bg-[#F6F9FB] text-[#567781] border-[#E8EEF2] hover:text-[#172B34] hover:bg-white'
                       }`}
                     >
-                      {isSelected ? <Check className="w-3 h-3 text-teal-600" /> : <Plus className="w-3 h-3 text-slate-400" />}
+                      {isSelected ? <Check className="w-3 h-3 text-[#087F8C]" /> : <Plus className="w-3 h-3 text-[#567781]" />}
                       <span>{preset}</span>
                     </button>
                   );
@@ -612,7 +621,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
               <Input
                 id="medicalHistory"
                 placeholder="e.g. Hypertension for 5 years, Asthma"
-                className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                className="h-10 text-xs border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                 {...register('medicalHistory')}
               />
             </div>
@@ -620,33 +629,36 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
           {/* SECTION 4: EMERGENCY & ADMINISTRATIVE */}
           <div className="space-y-4">
-            <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 pb-2">
-              4. Emergency Contact & Insurance
+            <div className="text-xs font-bold text-[#567781] uppercase tracking-wider border-b border-[#E8EEF2] pb-2 flex items-center gap-2">
+              <span className="p-1 rounded-md bg-[#087F8C]/10 text-[#087F8C]">
+                <ShieldAlert className="w-3.5 h-3.5" />
+              </span>
+              <span>4. Emergency Contact & Insurance</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="emergencyContactName" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Emergency Contact Person <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="emergencyContactName" className="text-xs font-bold text-[#172B34]">
+                  Emergency Contact Person <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <Input
                   id="emergencyContactName"
                   placeholder="e.g. Sarita Chandra (Spouse)"
-                  className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="h-10 text-xs border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                   {...register('emergencyContactName')}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="emergencyContactPhone" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Emergency Contact Phone <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="emergencyContactPhone" className="text-xs font-bold text-[#172B34]">
+                  Emergency Contact Phone <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                   <Input
                     id="emergencyContactPhone"
                     placeholder="e.g. 9876543211"
-                    className="pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                    className="pl-9 h-10 text-xs font-mono border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                     {...register('emergencyContactPhone')}
                   />
                 </div>
@@ -655,8 +667,8 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
 
             {/* Referral Source */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                Referral Source <span className="text-slate-400 font-normal">(Optional)</span>
+              <Label className="text-xs font-bold text-[#172B34] block">
+                Referral Source <span className="text-[#567781] font-normal">(Optional)</span>
               </Label>
               <div className="flex flex-wrap gap-1.5">
                 {REFERRAL_SOURCES.map((ref) => (
@@ -664,10 +676,10 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
                     key={ref}
                     type="button"
                     onClick={() => setValue('referralSource', watchReferral === ref ? '' : ref, { shouldValidate: true })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       watchReferral === ref
-                        ? 'bg-slate-900 text-white border-slate-900 dark:bg-teal-600 dark:border-teal-600'
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                        ? 'bg-[#087F8C] text-white border-[#087F8C] shadow-2xs'
+                        : 'bg-[#F6F9FB] border-[#E8EEF2] text-[#567781] hover:text-[#172B34] hover:bg-white'
                     }`}
                   >
                     {ref}
@@ -677,30 +689,30 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
             </div>
 
             {/* Insurance Provider & Policy */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="insuranceProvider" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Insurance / TPA Provider <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="insuranceProvider" className="text-xs font-bold text-[#172B34]">
+                  Insurance / TPA Provider <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <div className="relative">
-                  <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                  <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-[#567781] w-4 h-4 pointer-events-none" />
                   <Input
                     id="insuranceProvider"
                     placeholder="e.g. Star Health / ICICI Lombard"
-                    className="pl-9 h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                    className="pl-9 h-10 text-xs border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                     {...register('insuranceProvider')}
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="insurancePolicyNo" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Policy Card No. <span className="text-slate-400 font-normal">(Optional)</span>
+                <Label htmlFor="insurancePolicyNo" className="text-xs font-bold text-[#172B34]">
+                  Policy Card No. <span className="text-[#567781] font-normal">(Optional)</span>
                 </Label>
                 <Input
                   id="insurancePolicyNo"
                   placeholder="e.g. POL-9842104"
-                  className="h-10 text-sm font-medium border-slate-200 dark:border-slate-700 rounded-lg focus-visible:ring-teal-600"
+                  className="h-10 text-xs font-mono border-[#E8EEF2] bg-[#F6F9FB] rounded-xl focus:border-[#087F8C] text-[#172B34] placeholder-[#567781]"
                   {...register('insurancePolicyNo')}
                 />
               </div>
@@ -710,12 +722,12 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
         </div>
 
         {/* Form Footer */}
-        <div className="px-6 py-4 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div className="px-5 sm:px-6 py-4 bg-[#F6F9FB] border-t border-[#E8EEF2] flex items-center justify-between">
           <Button
             type="button"
             variant="ghost"
-            onClick={onCancel ? onCancel : () => router.push('/dashboard')}
-            className="h-9 text-xs font-medium text-slate-600 dark:text-slate-400 cursor-pointer"
+            onClick={onCancel ? onCancel : () => router.push('/patients')}
+            className="h-9 text-xs font-semibold text-[#567781] hover:text-[#172B34] cursor-pointer"
           >
             Cancel
           </Button>
@@ -723,7 +735,7 @@ export const PatientForm: React.FC<PatientFormProps> = ({ patient, onSuccess, on
           <Button
             type="submit"
             disabled={isSubmitting || !watchPhone}
-            className="h-10 bg-teal-600 hover:bg-teal-700 text-white font-medium text-xs px-6 rounded-lg shadow-2xs border-0 cursor-pointer"
+            className="h-10 bg-[#087F8C] hover:bg-[#076b77] text-white font-bold text-xs px-6 rounded-xl shadow-md shadow-[#087F8C]/20 border-0 cursor-pointer disabled:opacity-50"
           >
             {isSubmitting ? 'Saving Record...' : isEditMode ? 'Save Profile Changes' : 'Complete Patient File'}
           </Button>

@@ -4,12 +4,13 @@ import React from 'react';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Sidebar } from '@/components/sidebar';
 import { Navbar } from '@/components/navbar';
+import { MobileNav } from '@/components/mobile-nav';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
       <div className="h-screen flex overflow-hidden bg-slate-50 print:h-auto print:overflow-visible print:bg-white print:block">
-        {/* Sidebar */}
+        {/* Desktop / Tablet Sidebar */}
         <div className="no-print print:hidden">
           <Sidebar />
         </div>
@@ -21,11 +22,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Navbar />
           </div>
 
-          {/* Main Context Screen */}
-          <main className="flex-1 overflow-y-auto p-8 print:p-0 print:m-0 print:overflow-visible print:h-auto print:block">
+          {/* Main Context Screen with responsive padding */}
+          <main className="flex-1 overflow-y-auto p-2.5 sm:p-4 md:p-6 lg:p-8 pb-20 md:pb-8 print:p-0 print:m-0 print:overflow-visible print:h-auto print:block">
             {children}
           </main>
         </div>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <MobileNav />
       </div>
     </ProtectedRoute>
   );

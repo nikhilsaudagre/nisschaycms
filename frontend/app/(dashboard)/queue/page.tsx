@@ -91,7 +91,9 @@ export default function QueueManagementPage() {
       });
       return response.data;
     },
-    refetchInterval: 10000,
+    refetchInterval: 2500,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // Update status mutation
@@ -232,106 +234,119 @@ export default function QueueManagementPage() {
       )}
 
       {/* 1. EXECUTIVE HEADER BANNER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 rounded-3xl shadow-xs">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="p-2.5 bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 rounded-2xl border border-teal-100 dark:border-teal-800">
+      <div className="relative overflow-hidden rounded-2xl bg-white border border-[#E8EEF2] shadow-2xs p-5 sm:p-6 transition-all space-y-4">
+        <div className="absolute -right-12 -top-12 w-64 h-64 bg-[#087F8C]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 -bottom-10 w-48 h-48 bg-[#4FA8DB]/5 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20 flex items-center justify-center font-bold shrink-0 shadow-2xs">
               <Users2 className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                  OPD Queue & Waiting Lounge
+                <h1 className="text-xl sm:text-2xl font-extrabold text-[#172B34] tracking-tight">
+                  Patient Queue
                 </h1>
-                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#087F8C] animate-ping" />
                   Live Sync
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Live token sequencing, audio callouts, patient check-ins, and waiting room TV broadcast.
+              <p className="text-xs text-[#567781] font-medium mt-0.5">
+                Live patient OPD queue, token sequence, audio announcements, and waiting room display.
               </p>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Button
-            onClick={() => setIsTvMode(true)}
-            className="h-10 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-4 rounded-xl shadow-xs cursor-pointer flex items-center gap-2 border-0"
-          >
-            <Tv className="w-4 h-4" />
-            <span>Launch TV Lounge</span>
-          </Button>
-
-          <Link href="/appointments/new">
-            <Button className="h-10 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs px-5 rounded-xl shadow-xs cursor-pointer flex items-center gap-2 border-0">
-              <Plus className="w-4 h-4" />
-              <span>Book Appointment</span>
+          <div className="flex items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsTvMode(true)}
+              className="h-10 border-[#E8EEF2] bg-[#F6F9FB] hover:bg-white text-[#172B34] font-bold text-xs px-3.5 sm:px-4 rounded-xl shadow-2xs cursor-pointer flex items-center gap-2 transition-all"
+            >
+              <Tv className="w-4 h-4 text-[#087F8C]" />
+              <span>TV Display</span>
             </Button>
-          </Link>
+
+            <Link href="/appointments/new">
+              <Button
+                size="sm"
+                className="h-10 bg-[#087F8C] hover:bg-[#076b77] text-white font-semibold text-xs px-4.5 rounded-xl shadow-md shadow-[#087F8C]/20 cursor-pointer flex items-center gap-2 border-0 transition-all active:scale-98"
+              >
+                <Plus className="w-4 h-4 text-white" />
+                <span>Book Appointment</span>
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* STATS CARDS ROW */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-xs flex items-center justify-between">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Waiting */}
+        <div className="bg-white border border-[#E8EEF2] rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between transition-all hover:border-[#087F8C]/40">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">In Waiting Lounge</span>
-            <div className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">{stats.waiting} Patients</div>
+            <span className="text-[11px] font-semibold text-[#567781] uppercase tracking-wider">Waiting</span>
+            <div className="text-2xl font-extrabold text-[#172B34]">{stats.waiting} <span className="text-xs font-semibold text-[#567781]">Patients</span></div>
           </div>
-          <div className="w-11 h-11 bg-indigo-50 dark:bg-indigo-950/50 rounded-xl flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+          <div className="w-10 h-10 bg-[#087F8C]/10 border border-[#087F8C]/20 rounded-xl flex items-center justify-center text-[#087F8C] shrink-0 shadow-2xs">
             <UserCheck className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-xs flex items-center justify-between">
+        {/* In Consult */}
+        <div className="bg-white border border-[#E8EEF2] rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between transition-all hover:border-amber-500/40">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">In Chamber</span>
-            <div className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">{stats.inConsult} Active</div>
+            <span className="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">In Consult</span>
+            <div className="text-2xl font-extrabold text-amber-600">{stats.inConsult} <span className="text-xs font-semibold text-[#567781]">Active</span></div>
           </div>
-          <div className="w-11 h-11 bg-amber-50 dark:bg-amber-950/50 rounded-xl flex items-center justify-center text-amber-600 dark:text-amber-400">
+          <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center text-amber-600 shrink-0 shadow-2xs">
             <Stethoscope className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-xs flex items-center justify-between">
+        {/* Wait Time */}
+        <div className="bg-white border border-[#E8EEF2] rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between transition-all hover:border-[#087F8C]/40">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-wider">Est. Wait Time</span>
-            <div className="text-2xl font-extrabold text-teal-600 dark:text-teal-400">~{stats.avgWaitMinutes} Mins</div>
+            <span className="text-[11px] font-semibold text-[#567781] uppercase tracking-wider">Avg. Wait</span>
+            <div className="text-2xl font-extrabold text-[#172B34]">~{stats.avgWaitMinutes} <span className="text-xs font-semibold text-[#567781]">Mins</span></div>
           </div>
-          <div className="w-11 h-11 bg-teal-50 dark:bg-teal-950/50 rounded-xl flex items-center justify-center text-teal-600 dark:text-teal-400">
+          <div className="w-10 h-10 bg-[#087F8C]/10 border border-[#087F8C]/20 rounded-xl flex items-center justify-center text-[#087F8C] shrink-0 shadow-2xs">
             <Clock className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4.5 shadow-xs flex items-center justify-between">
+        {/* Completed */}
+        <div className="bg-white border border-[#E8EEF2] rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between transition-all hover:border-[#22A06B]/40">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Done Today</span>
-            <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{stats.completed} Visits</div>
+            <span className="text-[11px] font-semibold text-[#22A06B] uppercase tracking-wider">Completed</span>
+            <div className="text-2xl font-extrabold text-[#22A06B]">{stats.completed} <span className="text-xs font-semibold text-[#567781]">Visits</span></div>
           </div>
-          <div className="w-11 h-11 bg-emerald-50 dark:bg-emerald-950/50 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <div className="w-10 h-10 bg-[#22A06B]/10 border border-[#22A06B]/20 rounded-xl flex items-center justify-center text-[#22A06B] shrink-0 shadow-2xs">
             <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       {/* 2. SEARCH & CONTROLS TOOLBAR */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-xs space-y-4">
-        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+      <div className="bg-white border border-[#E8EEF2] p-3.5 sm:p-4 rounded-2xl shadow-xs space-y-3 sm:space-y-4">
+        <div className="flex flex-col lg:flex-row gap-2.5 sm:gap-3 items-stretch lg:items-center justify-between">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#567781] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search live queue by Token (T-01), patient name, mobile, doctor..."
-              className="pl-9.5 pr-8 h-10 text-xs rounded-xl bg-slate-50 dark:bg-slate-850 border-slate-200 dark:border-slate-700"
+              placeholder="Search queue by Token (T-01), patient name, mobile..."
+              className="pl-9.5 pr-8 h-10 text-xs rounded-xl bg-[#F6F9FB] border-[#E8EEF2] text-[#172B34] placeholder:text-[#567781]/60 focus:border-[#087F8C]"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#567781] hover:text-[#172B34] cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -341,12 +356,12 @@ export default function QueueManagementPage() {
           {/* Doctor Filter */}
           <div className="w-full lg:w-56 shrink-0">
             <select
-              className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full h-10 px-3 bg-[#F6F9FB] rounded-xl border border-[#E8EEF2] text-xs font-semibold text-[#172B34] focus:outline-none focus:border-[#087F8C]"
               value={selectedDoctorId}
               onChange={(e) => setSelectedDoctorId(e.target.value)}
               disabled={user?.role === 'DOCTOR'}
             >
-              <option value="">All Doctor Chambers</option>
+              <option value="">All Doctors</option>
               {doctors.map((doc) => (
                 <option key={doc.id} value={doc.id}>
                   Dr. {doc.name}
@@ -356,11 +371,11 @@ export default function QueueManagementPage() {
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0 overflow-x-auto">
+          <div className="flex bg-[#F6F9FB] border border-[#E8EEF2] p-1 rounded-xl shrink-0 overflow-x-auto custom-scrollbar">
             {[
               { key: 'ALL', label: `All (${appointments.length})` },
               { key: 'WAITING', label: `Waiting (${stats.waiting})` },
-              { key: 'IN_CONSULTATION', label: `In Chamber (${stats.inConsult})` },
+              { key: 'IN_CONSULTATION', label: `In Consult (${stats.inConsult})` },
               { key: 'COMPLETED', label: `Done (${stats.completed})` },
             ].map((tab) => (
               <button
@@ -369,8 +384,8 @@ export default function QueueManagementPage() {
                 onClick={() => setStatusFilter(tab.key)}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                   statusFilter === tab.key
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+                    ? 'bg-white text-[#172B34] shadow-xs'
+                    : 'text-[#567781] hover:text-[#172B34]'
                 }`}
               >
                 {tab.label}
@@ -383,37 +398,37 @@ export default function QueueManagementPage() {
             variant="outline"
             size="sm"
             onClick={() => refetch()}
-            className="h-10 text-xs font-semibold rounded-xl border-slate-200 dark:border-slate-700 px-3"
+            className="h-10 text-xs font-semibold rounded-xl border-[#E8EEF2] bg-white text-[#567781] hover:text-[#087F8C] hover:bg-[#F6F9FB] px-3 cursor-pointer shadow-2xs"
             title="Refresh Queue"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? 'animate-spin text-teal-600' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? 'animate-spin text-[#087F8C]' : ''}`} />
           </Button>
         </div>
       </div>
 
       {/* 3. QUEUE TOKENS GRID */}
       {isLoading ? (
-        <div className="p-16 text-center text-slate-500 font-medium bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-xs">
-          <div className="w-9 h-9 border-3 border-teal-200 border-t-teal-600 rounded-full animate-spin mx-auto mb-3"></div>
+        <div className="p-16 text-center text-[#567781] font-medium bg-white border border-[#E8EEF2] rounded-3xl shadow-xs">
+          <div className="w-9 h-9 border-3 border-[#087F8C]/20 border-t-[#087F8C] rounded-full animate-spin mx-auto mb-3"></div>
           <span className="text-xs font-semibold">Synchronizing live queue tokens...</span>
         </div>
       ) : filteredAppointments.length === 0 ? (
-        <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-          <Users2 className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">No Patients in OPD Queue</h3>
-          <p className="text-slate-400 text-xs max-w-sm mx-auto">
+        <div className="p-16 text-center bg-white rounded-3xl border border-[#E8EEF2] shadow-xs space-y-3">
+          <Users2 className="w-12 h-12 text-[#567781]/30 mx-auto" />
+          <h3 className="text-base font-bold text-[#172B34]">No Patients in OPD Queue</h3>
+          <p className="text-[#567781] text-xs max-w-sm mx-auto">
             {searchQuery || statusFilter !== 'ALL'
               ? 'No tokens matched your filter criteria.'
               : 'There are no active patients waiting in the clinic queue for this date.'}
           </p>
           <Link href="/appointments/new">
-            <Button className="bg-teal-600 hover:bg-teal-700 text-white font-medium text-xs rounded-xl shadow-2xs mt-2">
+            <Button className="bg-[#087F8C] hover:bg-[#076b77] text-white font-medium text-xs rounded-xl shadow-2xs mt-2 border-0">
               Add Patient to Queue
             </Button>
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {filteredAppointments.map((appt) => {
             const tokenNumber = appointmentTokenMap.get(appt.id) || 'T-00';
             const isCurrentlyCalling = callingToken === tokenNumber;

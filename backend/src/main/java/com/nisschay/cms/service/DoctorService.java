@@ -1,14 +1,18 @@
 package com.nisschay.cms.service;
 
+import com.nisschay.cms.dto.req.DoctorLeaveRequest;
 import com.nisschay.cms.dto.req.DoctorProfileRequest;
 import com.nisschay.cms.dto.req.DoctorRegisterRequest;
+import com.nisschay.cms.dto.res.DoctorLeaveResponse;
 import com.nisschay.cms.dto.res.DoctorResponse;
 import com.nisschay.cms.entity.Clinic;
+import com.nisschay.cms.entity.DoctorLeaveEntity;
 import com.nisschay.cms.entity.DoctorProfile;
 import com.nisschay.cms.entity.Role;
 import com.nisschay.cms.entity.User;
 import com.nisschay.cms.exception.ResourceNotFoundException;
 import com.nisschay.cms.repository.ClinicRepository;
+import com.nisschay.cms.repository.DoctorLeaveRepository;
 import com.nisschay.cms.repository.DoctorProfileRepository;
 import com.nisschay.cms.repository.RoleRepository;
 import com.nisschay.cms.repository.UserRepository;
@@ -17,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,6 +33,7 @@ public class DoctorService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final DoctorProfileRepository doctorProfileRepository;
+    private final DoctorLeaveRepository doctorLeaveRepository;
     private final ClinicRepository clinicRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -43,9 +49,13 @@ public class DoctorService {
         Role role = roleRepository.findById("DOCTOR")
                 .orElseThrow(() -> new ResourceNotFoundException("DOCTOR role not found"));
 
+        long count = userRepository.countByClinicId(clinic.getId());
+        String generatedDocId = String.format("DOC-%d-%04d", java.time.LocalDate.now().getYear(), count + 1);
+
         User user = User.builder()
                 .clinic(clinic)
                 .role(role)
+                .employeeId(generatedDocId)
                 .name(request.getName())
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
@@ -59,6 +69,12 @@ public class DoctorService {
                 .id(savedUser.getId())
                 .user(savedUser)
                 .registrationNumber(request.getRegistrationNumber())
+                .medicalCouncil(request.getMedicalCouncil())
+                .registrationYear(request.getRegistrationYear())
+                .languagesSpoken(request.getLanguagesSpoken())
+                .gender(request.getGender())
+                .subSpecialization(request.getSubSpecialization())
+                .digitalSignature(request.getDigitalSignature())
                 .specialization(request.getSpecialization())
                 .consultationFee(request.getConsultationFee())
                 .followUpFee(request.getFollowUpFee() != null ? request.getFollowUpFee() : request.getConsultationFee())
@@ -96,6 +112,12 @@ public class DoctorService {
                         .build());
 
         profile.setRegistrationNumber(request.getRegistrationNumber());
+        profile.setMedicalCouncil(request.getMedicalCouncil());
+        profile.setRegistrationYear(request.getRegistrationYear());
+        profile.setLanguagesSpoken(request.getLanguagesSpoken());
+        profile.setGender(request.getGender());
+        profile.setSubSpecialization(request.getSubSpecialization());
+        profile.setDigitalSignature(request.getDigitalSignature());
         profile.setSpecialization(request.getSpecialization());
         profile.setConsultationFee(request.getConsultationFee());
         if (request.getFollowUpFee() != null) {
@@ -129,6 +151,19 @@ public class DoctorService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public DoctorResponse getDoctorById(UUID clinicId, UUID doctorId) {
+        User user = userRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+
+        if (!user.getClinic().getId().equals(clinicId)) {
+            throw new IllegalArgumentException("Doctor does not belong to this clinic");
+        }
+
+        DoctorProfile profile = doctorProfileRepository.findById(doctorId).orElse(null);
+        return DoctorResponse.build(user, profile);
+    }
+
     @Transactional
     public DoctorResponse toggleDoctorStatus(UUID clinicId, UUID doctorId) {
         User user = userRepository.findById(doctorId)
@@ -143,5 +178,75 @@ public class DoctorService {
 
         DoctorProfile profile = doctorProfileRepository.findById(doctorId).orElse(null);
         return DoctorResponse.build(savedUser, profile);
+    }
+
+    @Transactional
+    public DoctorLeaveResponse applyDoctorLeave(UUID clinicId, UUID doctorId, DoctorLeaveRequest request) {
+        User doctor = userRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+
+        if (!doctor.getClinic().getId().equals(clinicId)) {
+            throw new IllegalArgumentException("Doctor does not belong to this clinic");
+        }
+
+        if (request.getStartDate().isAfter(request.getEndDate())) {
+            throw new IllegalArgumentException("Leave start date cannot be after end date");
+        }
+
+        String substituteName = null;
+        if (request.getSubstituteDoctorId() != null) {
+            User sub = userRepository.findById(request.getSubstituteDoctorId()).orElse(null);
+            if (sub != null) substituteName = sub.getName();
+        }
+
+        DoctorLeaveEntity leave = DoctorLeaveEntity.builder()
+                .clinicId(clinicId)
+                .doctorId(doctorId)
+                .doctorName(doctor.getName())
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .reason(request.getReason())
+                .substituteDoctorId(request.getSubstituteDoctorId())
+                .substituteDoctorName(substituteName)
+                .status("APPROVED")
+                .build();
+
+        DoctorLeaveEntity saved = doctorLeaveRepository.save(leave);
+        return DoctorLeaveResponse.fromEntity(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DoctorLeaveResponse> getDoctorLeaves(UUID clinicId, UUID doctorId) {
+        return doctorLeaveRepository.findByClinicIdAndDoctorIdOrderByStartDateDesc(clinicId, doctorId)
+                .stream()
+                .map(DoctorLeaveResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<DoctorLeaveResponse> getUpcomingLeaves(UUID clinicId) {
+        return doctorLeaveRepository.findUpcomingLeavesByClinic(clinicId, LocalDate.now())
+                .stream()
+                .map(DoctorLeaveResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void cancelDoctorLeave(UUID clinicId, UUID doctorId, UUID leaveId) {
+        DoctorLeaveEntity leave = doctorLeaveRepository.findById(leaveId)
+                .orElseThrow(() -> new ResourceNotFoundException("Leave record not found"));
+
+        if (!leave.getClinicId().equals(clinicId) || !leave.getDoctorId().equals(doctorId)) {
+            throw new IllegalArgumentException("Leave record does not belong to this doctor");
+        }
+
+        leave.setStatus("CANCELLED");
+        doctorLeaveRepository.save(leave);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isDoctorOnLeave(UUID clinicId, UUID doctorId, LocalDate date) {
+        List<DoctorLeaveEntity> activeLeaves = doctorLeaveRepository.findActiveLeaveOnDate(clinicId, doctorId, date);
+        return !activeLeaves.isEmpty();
     }
 }

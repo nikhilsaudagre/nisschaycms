@@ -1,6 +1,10 @@
 import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
-const getBaseApiUrl = () => {
+export const getBaseApiUrl = () => {
+  if (typeof window !== 'undefined') {
+    const currentHost = window.location.hostname;
+    return `http://${currentHost}:8085/api/v1`;
+  }
   let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085/api/v1';
   url = url.trim().replace(/\/+$/, ''); // Remove trailing slashes
   if (!url.endsWith('/api/v1')) {
@@ -9,10 +13,8 @@ const getBaseApiUrl = () => {
   return url;
 };
 
-const API_URL = getBaseApiUrl();
-
 export const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: getBaseApiUrl(),
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -36,10 +38,11 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Injects Access Token into Headers
+// Injects Access Token into Headers and ensures dynamic baseURL
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
+      config.baseURL = getBaseApiUrl();
       const token = localStorage.getItem('accessToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -94,8 +97,9 @@ apiClient.interceptors.response.use(
       }
 
       try {
-        // Calling absolute endpoint to refresh token
-        const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+        // Calling dynamic endpoint to refresh token with explicit 8s timeout
+        const currentApiUrl = getBaseApiUrl();
+        const response = await axios.post(`${currentApiUrl}/auth/refresh`, { refreshToken }, { timeout: 8000 });
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data;
 
         localStorage.setItem('accessToken', newAccessToken);
@@ -112,7 +116,7 @@ apiClient.interceptors.response.use(
         processQueue(refreshError, null);
         isRefreshing = false;
         
-        // Refresh token expired or invalid -> trigger logout
+        // Refresh token expired or invalidated -> cleanly clear stale tokens and trigger logout redirect
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
@@ -120,7 +124,7 @@ apiClient.interceptors.response.use(
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('auth:logout'));
         }
-        return Promise.reject(refreshError);
+        return Promise.reject(new Error('Session expired. Please log in again.'));
       }
     }
 

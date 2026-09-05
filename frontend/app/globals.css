@@ -122,7 +122,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-slate-50/70 text-slate-800 antialiased selection:bg-teal-500 selection:text-white font-sans;
+    @apply bg-[#F6F9FB] text-[#172B34] antialiased selection:bg-[#087F8C] selection:text-white font-sans;
   }
   html {
     @apply font-sans scroll-smooth;

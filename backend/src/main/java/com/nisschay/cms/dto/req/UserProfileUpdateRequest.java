@@ -8,4 +8,7 @@ public class UserProfileUpdateRequest {
     private String phone;
     private String password;
     private String profilePictureUrl;
+    private Boolean notifyDailyReport;
+    private Boolean notifyEmergencyVisit;
+    private Boolean notifyRxAudit;
 }

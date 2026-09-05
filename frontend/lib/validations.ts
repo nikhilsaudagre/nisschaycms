@@ -11,6 +11,19 @@ export const clinicRegisterSchema = z
     clinicEmail: z.string().min(1, 'Clinic email is required').email('Invalid clinic email'),
     clinicPhone: z.string().min(10, 'Phone number must be at least 10 digits'),
     clinicAddress: z.string().optional(),
+    // Hospital & Healthcare Facility Infrastructure
+    facilityType: z.string().optional(),
+    totalBeds: z.union([z.number(), z.string()]).optional(),
+    totalIcuBeds: z.union([z.number(), z.string()]).optional(),
+    totalOtRooms: z.union([z.number(), z.string()]).optional(),
+    nabhAccreditationNumber: z.string().optional(),
+    rohiniHospitalId: z.string().optional(),
+    clinicalEstRegistrationNumber: z.string().optional(),
+    enabledDepartments: z.string().optional(),
+    ambulanceContactPhone: z.string().optional(),
+    bloodBankAvailable: z.boolean().optional(),
+    pharmacy24x7: z.boolean().optional(),
+    // Admin User Info
     adminName: z.string().min(2, 'Admin name must be at least 2 characters'),
     adminEmail: z.string().min(1, 'Admin email is required').email('Invalid admin email'),
     adminPhone: z.string().min(10, 'Admin phone number must be at least 10 digits').optional().or(z.literal('')),
@@ -87,9 +100,14 @@ export const doctorSchema = z.object({
   phone: z.string().min(10, 'Phone number must be at least 10 digits').max(15, 'Phone number cannot exceed 15 digits'),
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
   password: z.string().optional().or(z.literal('')),
+  gender: z.string().optional().or(z.literal('')),
   registrationNumber: z.string().optional().or(z.literal('')),
+  medicalCouncil: z.string().optional().or(z.literal('')),
+  registrationYear: z.preprocess((v) => (v === '' || v === null || v === undefined ? undefined : Number(v)), z.number().optional()),
   specialization: z.string().min(2, 'Specialization is required'),
+  subSpecialization: z.string().optional().or(z.literal('')),
   qualification: z.string().optional().or(z.literal('')),
+  languagesSpoken: z.string().optional().or(z.literal('')),
   experienceYears: z.preprocess((v) => (v === '' || v === null || v === undefined ? 0 : Number(v)), z.number().optional()),
   consultationFee: z.preprocess((v) => (v === '' || v === null || v === undefined ? 0 : Number(v)), z.number().min(0, 'Fee cannot be negative')),
   followUpFee: z.preprocess((v) => (v === '' || v === null || v === undefined ? undefined : Number(v)), z.number().optional()),
@@ -98,6 +116,7 @@ export const doctorSchema = z.object({
   slotDuration: z.preprocess((v) => (v === '' || v === null || v === undefined ? 15 : Number(v)), z.number().optional()),
   availabilitySchedule: z.string().optional().or(z.literal('')),
   biography: z.string().optional().or(z.literal('')),
+  digitalSignature: z.string().optional().or(z.literal('')),
 });
 
 export type DoctorInput = z.infer<typeof doctorSchema>;

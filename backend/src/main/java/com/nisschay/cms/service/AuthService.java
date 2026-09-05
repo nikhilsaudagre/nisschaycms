@@ -41,11 +41,11 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${nisschay.app.jwtRefreshExpirationMs}")
+    @Value("${nisschay.app.jwtRefreshExpirationMs:604800000}")
     private Long refreshTokenDurationMs;
 
     @Transactional
-    public AuthResponse registerClinic(ClinicRegisterRequest request) {
+    public AuthResponse registerClinic(ClinicRegisterRequest request, jakarta.servlet.http.HttpServletRequest httpServletRequest) {
         if (request.getConfirmPassword() != null && !request.getAdminPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("Passwords do not match");
         }
@@ -77,11 +77,16 @@ public class AuthService {
         LoginRequest loginReq = new LoginRequest();
         loginReq.setEmail(adminEmail);
         loginReq.setPassword(request.getAdminPassword());
-        return login(loginReq);
+        return login(loginReq, httpServletRequest);
     }
 
     @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse registerClinic(ClinicRegisterRequest request) {
+        return registerClinic(request, null);
+    }
+
+    @Transactional
+    public AuthResponse login(LoginRequest request, jakarta.servlet.http.HttpServletRequest httpServletRequest) {
         String normalizedEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : "";
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(normalizedEmail, request.getPassword())
@@ -92,11 +97,12 @@ public class AuthService {
 
         String jwt = jwtUtils.generateJwtToken(userDetails);
 
-        // Manage refresh token rotation
         User user = userService.getUserByEmail(userDetails.getEmail());
-        refreshTokenRepository.deleteByUser(user);
         
-        RefreshToken refreshToken = createRefreshToken(user);
+        String deviceInfo = com.nisschay.cms.util.DeviceDetector.detectDevice(httpServletRequest);
+        String ipAddress = com.nisschay.cms.util.DeviceDetector.extractClientIp(httpServletRequest);
+        
+        RefreshToken refreshToken = createRefreshToken(user, deviceInfo, ipAddress);
 
         return AuthResponse.builder()
                 .accessToken(jwt)
@@ -107,14 +113,23 @@ public class AuthService {
                 .role(userDetails.getRole())
                 .clinicId(userDetails.getClinicId())
                 .clinicName(userDetails.getClinicName())
+                .profilePictureUrl(user.getProfilePictureUrl())
                 .build();
     }
 
     @Transactional
-    public RefreshToken createRefreshToken(User user) {
+    public AuthResponse login(LoginRequest request) {
+        return login(request, null);
+    }
+
+    @Transactional
+    public RefreshToken createRefreshToken(User user, String deviceInfo, String ipAddress) {
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .token(UUID.randomUUID().toString())
+                .deviceInfo(deviceInfo != null ? deviceInfo : "Web Browser (Standard)")
+                .ipAddress(ipAddress != null ? ipAddress : "127.0.0.1")
+                .lastActiveAt(OffsetDateTime.now())
                 .expiryDate(OffsetDateTime.now().plusSeconds(refreshTokenDurationMs / 1000))
                 .build();
 
@@ -122,7 +137,12 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse refreshAccessToken(String requestRefreshToken) {
+    public RefreshToken createRefreshToken(User user) {
+        return createRefreshToken(user, "Web Browser (Standard)", "127.0.0.1");
+    }
+
+    @Transactional
+    public AuthResponse refreshAccessToken(String requestRefreshToken, jakarta.servlet.http.HttpServletRequest httpServletRequest) {
         RefreshToken token = refreshTokenRepository.findByToken(requestRefreshToken)
                 .orElseThrow(() -> new TokenException(requestRefreshToken, "Refresh token not found"));
 
@@ -137,23 +157,33 @@ public class AuthService {
 
         User user = token.getUser();
         
-        // Rotate refresh token
-        refreshTokenRepository.deleteByUser(user);
-        RefreshToken newRefreshToken = createRefreshToken(user);
+        // Update device / IP if new, update last active
+        token.setLastActiveAt(OffsetDateTime.now());
+        if (httpServletRequest != null) {
+            token.setDeviceInfo(com.nisschay.cms.util.DeviceDetector.detectDevice(httpServletRequest));
+            token.setIpAddress(com.nisschay.cms.util.DeviceDetector.extractClientIp(httpServletRequest));
+        }
+        refreshTokenRepository.save(token);
 
         UserDetailsImpl userDetails = UserDetailsImpl.build(user);
         String newAccessToken = jwtUtils.generateJwtToken(userDetails);
 
         return AuthResponse.builder()
                 .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken.getToken())
+                .refreshToken(token.getToken())
                 .userId(userDetails.getId())
                 .name(userDetails.getName())
                 .email(userDetails.getEmail())
                 .role(userDetails.getRole())
                 .clinicId(userDetails.getClinicId())
                 .clinicName(userDetails.getClinicName())
+                .profilePictureUrl(user.getProfilePictureUrl())
                 .build();
+    }
+
+    @Transactional
+    public AuthResponse refreshAccessToken(String requestRefreshToken) {
+        return refreshAccessToken(requestRefreshToken, null);
     }
 
     @Transactional

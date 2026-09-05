@@ -34,6 +34,15 @@ public class RefreshToken {
     @Column(nullable = false)
     private Boolean revoked = false;
 
+    @Column(name = "device_info")
+    private String deviceInfo;
+
+    @Column(name = "ip_address")
+    private String ipAddress;
+
+    @Column(name = "last_active_at")
+    private OffsetDateTime lastActiveAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, nullable = false)
     private OffsetDateTime createdAt;

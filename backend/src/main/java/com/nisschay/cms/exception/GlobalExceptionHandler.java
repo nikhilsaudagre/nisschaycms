@@ -31,9 +31,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TokenException.class)
     public ResponseEntity<Map<String, String>> handleTokenException(TokenException ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", "Token Error");
+        response.put("error", "Unauthorized");
         response.put("message", ex.getMessage());
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -74,6 +74,22 @@ public class GlobalExceptionHandler {
         response.put("error", "Forbidden");
         response.put("message", "You do not have permission to access this resource or perform this operation.");
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Not Found");
+        response.put("message", "Endpoint or resource not found: " + ex.getResourcePath());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, String>> handleMissingParams(org.springframework.web.bind.MissingServletRequestParameterException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Bad Request");
+        response.put("message", "Required parameter '" + ex.getParameterName() + "' is missing");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)

@@ -19,9 +19,16 @@ public class DoctorResponse {
     private String name;
     private String email;
     private String phone;
+    private String employeeId;
     private boolean active;
     private String specialization;
     private String registrationNumber;
+    private String medicalCouncil;
+    private Integer registrationYear;
+    private String languagesSpoken;
+    private String gender;
+    private String subSpecialization;
+    private String digitalSignature;
     private BigDecimal consultationFee;
     private BigDecimal followUpFee;
     private BigDecimal emergencyFee;
@@ -31,6 +38,7 @@ public class DoctorResponse {
     private Integer slotDuration;
     private String biography;
     private String availabilitySchedule;
+    private String profilePictureUrl;
 
     public static DoctorResponse build(User user, DoctorProfile profile) {
         DoctorResponseBuilder builder = DoctorResponse.builder()
@@ -38,11 +46,19 @@ public class DoctorResponse {
                 .name(user.getName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
-                .active(user.getActive());
+                .employeeId(user.getEmployeeId())
+                .active(user.getActive())
+                .profilePictureUrl(user.getProfilePictureUrl());
 
         if (profile != null) {
             builder.specialization(profile.getSpecialization())
                     .registrationNumber(profile.getRegistrationNumber())
+                    .medicalCouncil(profile.getMedicalCouncil())
+                    .registrationYear(profile.getRegistrationYear())
+                    .languagesSpoken(profile.getLanguagesSpoken())
+                    .gender(profile.getGender())
+                    .subSpecialization(profile.getSubSpecialization())
+                    .digitalSignature(profile.getDigitalSignature())
                     .consultationFee(profile.getConsultationFee())
                     .followUpFee(profile.getFollowUpFee() != null ? profile.getFollowUpFee() : profile.getConsultationFee())
                     .emergencyFee(profile.getEmergencyFee() != null ? profile.getEmergencyFee() : profile.getConsultationFee())
@@ -56,6 +72,12 @@ public class DoctorResponse {
             // Fallback defaults for admin acting as provider
             builder.specialization("General Practice")
                     .registrationNumber("")
+                    .medicalCouncil("")
+                    .registrationYear(null)
+                    .languagesSpoken("")
+                    .gender("")
+                    .subSpecialization("")
+                    .digitalSignature("")
                     .consultationFee(BigDecimal.ZERO)
                     .followUpFee(BigDecimal.ZERO)
                     .emergencyFee(BigDecimal.ZERO)

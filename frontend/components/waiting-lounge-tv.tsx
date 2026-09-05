@@ -94,15 +94,15 @@ export const WaitingLoungeTv: React.FC<WaitingLoungeTvProps> = ({
       <header className="h-20 bg-slate-900/90 border-b border-slate-800/80 px-8 flex items-center justify-between shadow-2xl relative z-10 backdrop-blur-md">
         {/* Left Branding */}
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-teal-900/40 ring-1 ring-white/20">
+          <div className="w-12 h-12 rounded-2xl bg-[#087F8C] flex items-center justify-center text-white shadow-lg shadow-[#087F8C]/40 ring-1 ring-white/20">
             <Stethoscope className="w-7 h-7 text-white" />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none">
               NISSCHAY CLINICAL LOUNGE
             </h1>
-            <p className="text-xs font-bold text-teal-400 uppercase tracking-widest mt-1 flex items-center space-x-1.5">
-              <span className="w-2 h-2 rounded-full bg-teal-400 animate-ping inline-block" />
+            <p className="text-xs font-bold text-[#4FA8DB] uppercase tracking-widest mt-1 flex items-center space-x-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#4FA8DB] animate-ping inline-block" />
               <span>LIVE QUEUE DISPLAY MONITOR</span>
             </p>
           </div>
@@ -158,8 +158,8 @@ export const WaitingLoungeTv: React.FC<WaitingLoungeTvProps> = ({
         {/* Left Column: Big "NOW SERVING" Stage Hero (7 cols) */}
         <section className="lg:col-span-7 flex flex-col space-y-6 min-h-0">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black uppercase tracking-widest text-emerald-400 flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm font-black uppercase tracking-widest text-teal-400 flex items-center space-x-2">
+              <Sparkles className="w-4 h-4 text-teal-400" />
               <span>NOW INSIDE DOCTOR CHAMBERS</span>
             </h2>
             <span className="text-xs font-bold text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
@@ -174,15 +174,15 @@ export const WaitingLoungeTv: React.FC<WaitingLoungeTvProps> = ({
                 return (
                   <div
                     key={appt.id}
-                    className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-900/90 to-emerald-950/30 border-2 border-emerald-500/50 shadow-2xl shadow-emerald-950/50 flex flex-col justify-between overflow-hidden group"
+                    className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-slate-900 via-slate-900/90 to-teal-950/30 border-2 border-teal-600/50 shadow-2xl shadow-teal-950/50 flex flex-col justify-between overflow-hidden group"
                   >
                     {/* Ambient Glow */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-teal-600/10 rounded-full blur-3xl pointer-events-none" />
 
                     <div className="flex items-start justify-between gap-4 relative z-10">
                       <div>
                         {/* Token Pill Header */}
-                        <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-2xl bg-emerald-500 text-slate-950 font-mono font-black text-xl sm:text-2xl shadow-lg shadow-emerald-950">
+                        <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-2xl bg-teal-600 text-slate-950 font-mono font-black text-xl sm:text-2xl shadow-lg shadow-teal-950">
                           <span className="text-xs font-sans font-bold opacity-80 uppercase">TOKEN</span>
                           <span>{token}</span>
                         </div>
@@ -192,8 +192,8 @@ export const WaitingLoungeTv: React.FC<WaitingLoungeTvProps> = ({
                       </div>
 
                       <div className="text-right">
-                        <span className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full text-xs font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-800">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                        <span className="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full text-xs font-extrabold bg-teal-950 text-teal-300 border border-teal-800">
+                          <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-ping" />
                           <span>In Session</span>
                         </span>
                       </div>
@@ -213,7 +213,7 @@ export const WaitingLoungeTv: React.FC<WaitingLoungeTvProps> = ({
                       </div>
 
                       <div className="flex items-center space-x-3 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
-                        <Building2 className="w-5 h-5 text-emerald-400" />
+                        <Building2 className="w-5 h-5 text-teal-400" />
                         <span className="text-sm font-extrabold text-white">Chamber 1</span>
                       </div>
                     </div>
@@ -254,7 +254,7 @@ export const WaitingLoungeTv: React.FC<WaitingLoungeTvProps> = ({
                     key={appt.id}
                     className={`p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                       isNext
-                        ? 'bg-gradient-to-r from-teal-950/80 to-slate-900 border-teal-500/60 ring-1 ring-teal-500/30'
+                        ? 'bg-gradient-to-r from-teal-950/80 to-slate-900 border-teal-600/60 ring-1 ring-teal-600/30'
                         : 'bg-slate-900/90 border-slate-800/80 hover:border-slate-700'
                     }`}
                   >

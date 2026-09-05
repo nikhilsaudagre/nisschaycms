@@ -43,8 +43,8 @@ export default function ResetPasswordPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2 text-center sm:text-left">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-100 text-xs font-extrabold mb-1 shadow-2xs">
-          <KeyRound className="w-3.5 h-3.5 text-sky-600" />
+        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-50 text-teal-700 border border-sky-100 text-xs font-extrabold mb-1 shadow-2xs">
+          <KeyRound className="w-3.5 h-3.5 text-teal-600" />
           <span>Credential Reset</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Reset Password</h1>
@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
 
       {/* Error Alert Card */}
       {error && (
-        <div className="p-4 bg-rose-50/90 border border-rose-200/80 rounded-2xl text-xs text-rose-700 font-semibold flex items-start space-x-3 shadow-2xs animate-fadeIn">
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold flex items-start space-x-3 shadow-2xs animate-fadeIn">
           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
@@ -63,19 +63,19 @@ export default function ResetPasswordPage() {
 
       {/* Success Card */}
       {success ? (
-        <div className="p-6 bg-emerald-50/90 border border-emerald-200/80 rounded-2xl space-y-4 shadow-2xs text-center">
-          <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-2xs">
+        <div className="p-6 bg-sky-50/90 border border-sky-200/80 rounded-2xl space-y-4 shadow-2xs text-center">
+          <div className="w-12 h-12 bg-sky-100 text-teal-600 rounded-full flex items-center justify-center mx-auto shadow-2xs">
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-extrabold text-emerald-900">Password Reset Successful</h3>
-            <p className="text-xs text-emerald-700 font-medium">
+            <h3 className="text-base font-extrabold text-teal-950">Password Reset Successful</h3>
+            <p className="text-xs text-teal-700 font-medium">
               Your password has been updated. You can now log in with your new credentials.
             </p>
           </div>
           <Link
             href="/login"
-            className="w-full h-11 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-sm rounded-xl shadow-xs flex items-center justify-center space-x-2 transition-all"
+            className="w-full h-11 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-sm rounded-xl shadow-xs flex items-center justify-center space-x-2 transition-all"
           >
             <span>Proceed to Login</span>
             <ArrowRight className="w-4 h-4" />
@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
                 id="token"
                 placeholder="e.g. 123456"
                 className={`pl-11 h-11 text-sm bg-slate-50/50 focus:bg-white rounded-xl font-mono tracking-widest text-center ${
-                  errors.token ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-slate-200 focus-visible:ring-sky-500'
+                  errors.token ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-slate-200 focus-visible:ring-teal-600'
                 }`}
                 maxLength={6}
                 {...register('token')}
@@ -118,14 +118,15 @@ export default function ResetPasswordPage() {
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Min 6 characters"
                 className={`pl-11 pr-11 h-11 text-sm bg-slate-50/50 focus:bg-white rounded-xl font-medium transition-all ${
-                  errors.newPassword ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-slate-200 focus-visible:ring-sky-500'
+                  errors.newPassword ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-slate-200 focus-visible:ring-teal-600'
                 }`}
                 {...register('newPassword')}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
+                title={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
               </button>
@@ -149,14 +150,15 @@ export default function ResetPasswordPage() {
                 type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="Re-enter new password"
                 className={`pl-11 pr-11 h-11 text-sm bg-slate-50/50 focus:bg-white rounded-xl font-medium transition-all ${
-                  errors.confirmPassword ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-slate-200 focus-visible:ring-sky-500'
+                  errors.confirmPassword ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-slate-200 focus-visible:ring-teal-600'
                 }`}
                 {...register('confirmPassword')}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
+                title={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
                 {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
               </button>
@@ -171,7 +173,7 @@ export default function ResetPasswordPage() {
 
           <Button
             type="submit"
-            className="w-full h-11 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-sm rounded-xl transition-all duration-200 mt-6 shadow-md shadow-sky-500/20 active:scale-98 flex items-center justify-center space-x-2"
+            className="w-full h-11 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-sm rounded-xl transition-all duration-200 mt-6 shadow-md shadow-teal-600/25 active:scale-98 flex items-center justify-center space-x-2 border-0 cursor-pointer"
             disabled={isSubmitting}
           >
             <span>{isSubmitting ? 'Updating Password...' : 'Save New Password'}</span>
@@ -186,7 +188,7 @@ export default function ResetPasswordPage() {
           Remembered credentials?{' '}
           <Link
             href="/login"
-            className="text-sky-600 hover:text-sky-800 font-extrabold transition-colors underline underline-offset-2"
+            className="text-teal-600 hover:text-teal-800 font-extrabold transition-colors underline underline-offset-2"
           >
             Back to Sign In
           </Link>

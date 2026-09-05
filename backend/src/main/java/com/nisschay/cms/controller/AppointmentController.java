@@ -23,6 +23,20 @@ import java.util.UUID;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final com.nisschay.cms.service.PrescriptionPdfService prescriptionPdfService;
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN', 'DOCTOR', 'RECEPTIONIST') or hasAuthority('READ_APPOINTMENTS')")
+    @GetMapping("/{id}/prescription-pdf")
+    public ResponseEntity<byte[]> getPrescriptionPdf(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable UUID id
+    ) {
+        byte[] pdfBytes = prescriptionPdfService.generatePrescriptionPdf(userDetails.getClinicId(), id);
+        return ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, org.springframework.http.MediaType.APPLICATION_PDF_VALUE)
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"prescription-" + id + ".pdf\"")
+                .body(pdfBytes);
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN', 'DOCTOR', 'RECEPTIONIST') or hasAuthority('WRITE_APPOINTMENTS')")
     @PostMapping
@@ -61,10 +75,11 @@ public class AppointmentController {
     @GetMapping
     public ResponseEntity<List<AppointmentResponse>> getAppointments(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(required = false) UUID doctorId
     ) {
-        List<AppointmentResponse> response = appointmentService.getAppointmentsByDate(userDetails.getClinicId(), date, doctorId);
+        LocalDate queryDate = (date != null) ? date : LocalDate.now();
+        List<AppointmentResponse> response = appointmentService.getAppointmentsByDate(userDetails.getClinicId(), queryDate, doctorId);
         return ResponseEntity.ok(response);
     }
 
@@ -75,6 +90,16 @@ public class AppointmentController {
             @PathVariable UUID patientId
     ) {
         List<AppointmentResponse> response = appointmentService.getAppointmentsForPatient(userDetails.getClinicId(), patientId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN', 'DOCTOR', 'RECEPTIONIST') or hasAuthority('READ_APPOINTMENTS')")
+    @GetMapping("/doctor/{doctorId}")
+    public ResponseEntity<List<AppointmentResponse>> getDoctorAppointments(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable UUID doctorId
+    ) {
+        List<AppointmentResponse> response = appointmentService.getAppointmentsForDoctor(userDetails.getClinicId(), doctorId);
         return ResponseEntity.ok(response);
     }
 

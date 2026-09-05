@@ -196,31 +196,121 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] getAppointmentsCsvBytes(UUID clinicId, LocalDate startDate, LocalDate endDate) {
-        List<Appointment> appts = fetchAppointments(clinicId, startDate, endDate, null);
-        List<Appointment> completed = appts.stream()
-                .filter(a -> "COMPLETED".equalsIgnoreCase(a.getStatus()))
-                .sorted(Comparator.comparing(Appointment::getAppointmentDate))
-                .collect(Collectors.toList());
+    public byte[] getAppointmentsCsvBytes(UUID clinicId, LocalDate startDate, LocalDate endDate, UUID doctorId, String status, String reportType) {
+        if (startDate == null) startDate = LocalDate.now().minusDays(30);
+        if (endDate == null) endDate = LocalDate.now();
+
+        if ("PATIENTS".equalsIgnoreCase(reportType)) {
+            return generatePatientsCsv(clinicId);
+        } else if ("DOCTOR_PERFORMANCE".equalsIgnoreCase(reportType)) {
+            return generateDoctorPerformanceCsv(clinicId, startDate, endDate);
+        } else if ("CLINICAL".equalsIgnoreCase(reportType)) {
+            return generateClinicalCsv(clinicId, startDate, endDate, doctorId, status);
+        } else {
+            return generateFinancialCsv(clinicId, startDate, endDate, doctorId, status);
+        }
+    }
+
+    private byte[] generateFinancialCsv(UUID clinicId, LocalDate startDate, LocalDate endDate, UUID doctorId, String status) {
+        List<Appointment> appts = fetchAppointments(clinicId, startDate, endDate, doctorId);
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            appts = appts.stream()
+                    .filter(a -> status.equalsIgnoreCase(a.getStatus()))
+                    .collect(Collectors.toList());
+        }
+        appts.sort(Comparator.comparing(Appointment::getAppointmentDate));
 
         Map<UUID, DoctorProfile> profileMap = getDoctorProfileMap(clinicId);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("Appointment Date,Patient Name,Gender,Phone,Doctor Name,Visit Type,Fee (₹),Diagnosis,Symptoms,Notes\n");
+        sb.append("Appointment Date,Time,Patient Name,Phone,Doctor Name,Visit Type,Status,Consultation Fee (₹)\n");
 
-        for (Appointment a : completed) {
+        for (Appointment a : appts) {
             DoctorProfile profile = profileMap.get(a.getDoctor().getId());
             BigDecimal fee = profile != null ? profile.getFeeForType(a.getType()) : new BigDecimal("500");
             sb.append(escapeCsv(a.getAppointmentDate().toString())).append(",")
+              .append(escapeCsv(a.getStartTime() != null ? a.getStartTime().toString() : "")).append(",")
+              .append(escapeCsv(a.getPatient() != null ? a.getPatient().getName() : "Unknown")).append(",")
+              .append(escapeCsv(a.getPatient() != null ? a.getPatient().getPhone() : "N/A")).append(",")
+              .append(escapeCsv(a.getDoctor().getName())).append(",")
+              .append(escapeCsv(a.getType())).append(",")
+              .append(escapeCsv(a.getStatus())).append(",")
+              .append(fee.toString()).append("\n");
+        }
+
+        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private byte[] generateClinicalCsv(UUID clinicId, LocalDate startDate, LocalDate endDate, UUID doctorId, String status) {
+        List<Appointment> appts = fetchAppointments(clinicId, startDate, endDate, doctorId);
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            appts = appts.stream()
+                    .filter(a -> status.equalsIgnoreCase(a.getStatus()))
+                    .collect(Collectors.toList());
+        }
+        appts.sort(Comparator.comparing(Appointment::getAppointmentDate));
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Appointment Date,Time,Patient Name,Gender,Phone,Doctor Name,Visit Type,Status,Symptoms,Diagnosis,Prescription Notes,Follow-up Date\n");
+
+        for (Appointment a : appts) {
+            sb.append(escapeCsv(a.getAppointmentDate().toString())).append(",")
+              .append(escapeCsv(a.getStartTime() != null ? a.getStartTime().toString() : "")).append(",")
               .append(escapeCsv(a.getPatient() != null ? a.getPatient().getName() : "Unknown")).append(",")
               .append(escapeCsv(a.getPatient() != null ? a.getPatient().getGender() : "N/A")).append(",")
               .append(escapeCsv(a.getPatient() != null ? a.getPatient().getPhone() : "N/A")).append(",")
               .append(escapeCsv(a.getDoctor().getName())).append(",")
               .append(escapeCsv(a.getType())).append(",")
-              .append(fee.toString()).append(",")
-              .append(escapeCsv(a.getDiagnosis())).append(",")
+              .append(escapeCsv(a.getStatus())).append(",")
               .append(escapeCsv(a.getSymptoms())).append(",")
-              .append(escapeCsv(a.getNotes())).append("\n");
+              .append(escapeCsv(a.getDiagnosis())).append(",")
+              .append(escapeCsv(a.getPrescription() != null ? a.getPrescription() : a.getNotes())).append(",")
+              .append(escapeCsv(a.getFollowUpDate() != null ? a.getFollowUpDate().toString() : "")).append("\n");
+        }
+
+        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private byte[] generatePatientsCsv(UUID clinicId) {
+        List<Patient> patients = patientRepository.findByClinicId(clinicId);
+        patients.sort(Comparator.comparing(Patient::getCreatedAt).reversed());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Patient ID,Full Name,Gender,Phone,Email,Date of Birth,Blood Group,Address,City,Pincode,Allergies,Medical History,Emergency Contact,Registered Date\n");
+
+        for (Patient p : patients) {
+            sb.append(escapeCsv(p.getId().toString().substring(0, 8).toUpperCase())).append(",")
+              .append(escapeCsv(p.getName())).append(",")
+              .append(escapeCsv(p.getGender())).append(",")
+              .append(escapeCsv(p.getPhone())).append(",")
+              .append(escapeCsv(p.getEmail())).append(",")
+              .append(escapeCsv(p.getDateOfBirth() != null ? p.getDateOfBirth().toString() : "")).append(",")
+              .append(escapeCsv(p.getBloodGroup())).append(",")
+              .append(escapeCsv(p.getAddress())).append(",")
+              .append(escapeCsv(p.getCity())).append(",")
+              .append(escapeCsv(p.getPincode())).append(",")
+              .append(escapeCsv(p.getAllergies())).append(",")
+              .append(escapeCsv(p.getMedicalHistory())).append(",")
+              .append(escapeCsv(p.getEmergencyContactPhone())).append(",")
+              .append(escapeCsv(p.getCreatedAt() != null ? p.getCreatedAt().toString() : "")).append("\n");
+        }
+
+        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private byte[] generateDoctorPerformanceCsv(UUID clinicId, LocalDate startDate, LocalDate endDate) {
+        List<DoctorShareItem> shares = getDoctorShare(clinicId, startDate, endDate);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Doctor Name,Completed Consultations,Total Revenue (₹),Average Revenue / Consult (₹)\n");
+
+        for (DoctorShareItem d : shares) {
+            BigDecimal avg = d.getConsultationCount() > 0 ?
+                    d.getRevenueShare().divide(BigDecimal.valueOf(d.getConsultationCount()), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+            sb.append(escapeCsv(d.getDoctorName())).append(",")
+              .append(d.getConsultationCount()).append(",")
+              .append(d.getRevenueShare().toString()).append(",")
+              .append(avg.toString()).append("\n");
         }
 
         return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);

@@ -125,7 +125,7 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
           <h2 className="text-xl font-extrabold text-slate-850 dark:text-slate-100 tracking-tight font-sans">
             {monthNames[currentMonth]} {currentYear}
           </h2>
-          <span className="text-xs font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 px-3 py-1 rounded-xl">
+          <span className="text-xs font-bold text-teal-700 dark:text-teal-400 bg-sky-50 dark:bg-teal-950/60 border border-sky-200 dark:border-teal-800 px-3 py-1 rounded-xl">
             Monthly Sheet View
           </span>
         </div>
@@ -135,7 +135,7 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
             variant="outline"
             size="icon"
             onClick={handlePrevMonth}
-            className="h-9 w-9 rounded-xl border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
+            className="h-9 w-9 rounded-xl border-[#E8EEF2] text-[#567781] hover:text-[#172B34] hover:bg-[#F6F9FB] cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -145,7 +145,7 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
               setCurrentYear(today.getFullYear());
               setCurrentMonth(today.getMonth());
             }}
-            className="h-9 px-3 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100"
+            className="h-9 px-3 text-xs font-bold rounded-xl border-[#E8EEF2] text-[#172B34] hover:bg-[#F6F9FB] cursor-pointer"
           >
             Current Month
           </Button>
@@ -153,7 +153,7 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
             variant="outline"
             size="icon"
             onClick={handleNextMonth}
-            className="h-9 w-9 rounded-xl border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100"
+            className="h-9 w-9 rounded-xl border-[#E8EEF2] text-[#567781] hover:text-[#172B34] hover:bg-[#F6F9FB] cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
@@ -161,9 +161,9 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
       </div>
 
       {/* 7-Column Days of Week Header */}
-      <div className="grid grid-cols-7 text-center border-b border-slate-200/80 dark:border-slate-800 pb-2">
+      <div className="grid grid-cols-7 text-center border-b border-[#E8EEF2] pb-2">
         {daysOfWeek.map((day) => (
-          <div key={day} className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <div key={day} className="text-xs font-bold text-[#567781] uppercase tracking-wider">
             {day}
           </div>
         ))}
@@ -186,20 +186,20 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
               onClick={() => {
                 onSelectDate(cell.dateStr);
               }}
-              className={`min-h-[90px] sm:min-h-[105px] p-2 rounded-2xl border transition-all cursor-pointer relative group flex flex-col justify-between ${
+              className={`min-h-[90px] sm:min-h-[105px] p-2 rounded-xl border transition-all cursor-pointer relative group flex flex-col justify-between ${
                 !cell.isCurrentMonth
-                  ? 'bg-slate-50/40 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800/40 text-slate-300 dark:text-slate-700'
+                  ? 'bg-[#F6F9FB]/50 border-[#E8EEF2]/60 text-[#567781]/40 opacity-60'
                   : isSelected
-                  ? 'bg-teal-50/70 dark:bg-teal-950/40 border-teal-500 ring-2 ring-teal-500/40 shadow-sm'
+                  ? 'bg-[#087F8C]/10 border-[#087F8C] ring-2 ring-[#087F8C]/30 shadow-xs'
                   : cell.isToday
-                  ? 'bg-white dark:bg-slate-800 border-teal-400 shadow-2xs'
-                  : 'bg-white dark:bg-slate-900 border-slate-200/70 dark:border-slate-800/80 hover:border-teal-400 hover:shadow-sm'
+                  ? 'bg-white border-[#087F8C] shadow-2xs'
+                  : 'bg-white border-[#E8EEF2] hover:border-[#087F8C]/60 hover:shadow-xs'
               }`}
             >
               {/* Day Header: Count Badge & Date Number */}
               <div className="flex items-center justify-between">
                 {dayAppts.length > 0 ? (
-                  <span className="bg-amber-500 text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded-md font-mono shadow-2xs">
+                  <span className="bg-[#087F8C] text-white font-extrabold text-[10px] px-1.5 py-0.5 rounded-md font-mono shadow-2xs">
                     {String(dayAppts.length).padStart(2, '0')}
                   </span>
                 ) : (
@@ -208,10 +208,10 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
                 <span
                   className={`text-xs font-mono font-bold ${
                     cell.isToday
-                      ? 'w-6 h-6 rounded-full bg-teal-600 text-white flex items-center justify-center font-extrabold shadow-2xs'
+                      ? 'w-6 h-6 rounded-full bg-[#087F8C] text-white flex items-center justify-center font-extrabold shadow-2xs'
                       : cell.isCurrentMonth
-                      ? 'text-slate-800 dark:text-slate-200'
-                      : 'text-slate-300 dark:text-slate-700'
+                      ? 'text-[#172B34]'
+                      : 'text-[#567781]/50'
                   }`}
                 >
                   {cell.dayNum < 10 ? `0${cell.dayNum}` : cell.dayNum}
@@ -222,25 +222,25 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
               <div className="flex items-center gap-1 flex-wrap my-1">
                 {completedCount > 0 && (
                   <span
-                    className="w-2 h-2 rounded-full bg-blue-500"
+                    className="w-2 h-2 rounded-full bg-[#22A06B]"
                     title={`${completedCount} Completed`}
                   />
                 )}
                 {inConsultCount > 0 && (
                   <span
-                    className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"
+                    className="w-2 h-2 rounded-full bg-[#087F8C] animate-pulse"
                     title={`${inConsultCount} In Consult`}
                   />
                 )}
                 {scheduledCount > 0 && (
                   <span
-                    className="w-2 h-2 rounded-full bg-amber-500"
-                    title={`${scheduledCount} Scheduled/Checked-In`}
+                    className="w-2 h-2 rounded-full bg-[#E9A23B]"
+                    title={`${scheduledCount} Scheduled/Waiting`}
                   />
                 )}
                 {dayAppts.some((a) => a.type === 'EMERGENCY') && (
                   <span
-                    className="w-2 h-2 rounded-full bg-rose-500"
+                    className="w-2 h-2 rounded-full bg-[#D64545]"
                     title="Emergency Visit"
                   />
                 )}
@@ -254,7 +254,7 @@ export const CalendarSheetView: React.FC<CalendarSheetViewProps> = ({
                     e.stopPropagation();
                     onQuickBookDate(cell.dateStr);
                   }}
-                  className="bg-teal-600 hover:bg-teal-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs flex items-center space-x-1"
+                  className="bg-[#087F8C] hover:bg-[#076b77] text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-2xs flex items-center space-x-1 cursor-pointer"
                 >
                   <Plus className="w-2.5 h-2.5" />
                   <span>Book</span>

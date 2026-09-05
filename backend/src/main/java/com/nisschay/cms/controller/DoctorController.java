@@ -1,7 +1,9 @@
 package com.nisschay.cms.controller;
 
+import com.nisschay.cms.dto.req.DoctorLeaveRequest;
 import com.nisschay.cms.dto.req.DoctorProfileRequest;
 import com.nisschay.cms.dto.req.DoctorRegisterRequest;
+import com.nisschay.cms.dto.res.DoctorLeaveResponse;
 import com.nisschay.cms.dto.res.DoctorResponse;
 import com.nisschay.cms.security.UserDetailsImpl;
 import com.nisschay.cms.service.DoctorService;
@@ -13,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -52,6 +55,16 @@ public class DoctorController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN', 'DOCTOR', 'RECEPTIONIST')")
+    @GetMapping("/{id}")
+    public ResponseEntity<DoctorResponse> getDoctor(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable UUID id
+    ) {
+        DoctorResponse response = doctorService.getDoctorById(userDetails.getClinicId(), id);
+        return ResponseEntity.ok(response);
+    }
+
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<DoctorResponse> toggleStatus(
@@ -60,5 +73,46 @@ public class DoctorController {
     ) {
         DoctorResponse response = doctorService.toggleDoctorStatus(userDetails.getClinicId(), id);
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN', 'DOCTOR')")
+    @PostMapping("/{id}/leaves")
+    public ResponseEntity<DoctorLeaveResponse> applyLeave(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable UUID id,
+            @Valid @RequestBody DoctorLeaveRequest request
+    ) {
+        DoctorLeaveResponse response = doctorService.applyDoctorLeave(userDetails.getClinicId(), id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN', 'DOCTOR', 'RECEPTIONIST')")
+    @GetMapping("/{id}/leaves")
+    public ResponseEntity<List<DoctorLeaveResponse>> getDoctorLeaves(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable UUID id
+    ) {
+        List<DoctorLeaveResponse> response = doctorService.getDoctorLeaves(userDetails.getClinicId(), id);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN', 'DOCTOR', 'RECEPTIONIST')")
+    @GetMapping("/leaves/upcoming")
+    public ResponseEntity<List<DoctorLeaveResponse>> getUpcomingLeaves(
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ) {
+        List<DoctorLeaveResponse> response = doctorService.getUpcomingLeaves(userDetails.getClinicId());
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'SUB_ADMIN', 'DOCTOR')")
+    @DeleteMapping("/{id}/leaves/{leaveId}")
+    public ResponseEntity<Map<String, String>> cancelLeave(
+            @AuthenticationPrincipal UserDetailsImpl userDetails,
+            @PathVariable UUID id,
+            @PathVariable UUID leaveId
+    ) {
+        doctorService.cancelDoctorLeave(userDetails.getClinicId(), id, leaveId);
+        return ResponseEntity.ok(Map.of("message", "Leave cancelled successfully"));
     }
 }

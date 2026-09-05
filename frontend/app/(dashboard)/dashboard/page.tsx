@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,10 +14,13 @@ import { Appointment, Doctor, Medicine, Clinic, Patient } from '@/types';
 import { PatientForm } from '@/components/patient-form';
 import { TimeSlotGrid } from '@/components/time-slot-grid';
 import { DoctorPrescriptionNotepadModal } from '@/components/prescription-notepad-modal';
+import { HospitalCommandCenter } from '@/components/hospital-command-center';
 import {
   CalendarDays,
+  Users,
   Users2,
   IndianRupee,
+  BedDouble,
   PlusCircle,
   Clock,
   CheckCircle2,
@@ -44,7 +48,13 @@ import {
   SlidersHorizontal,
   TrendingUp,
   UserCheck,
-  Zap
+  Zap,
+  Receipt,
+  CreditCard,
+  RotateCcw,
+  Eye,
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
 
 interface PatientsPageResponse {
@@ -139,6 +149,14 @@ const ADVICE_TEMPLATES = [
   'Monitor body temperature and blood pressure 6-hourly.',
 ];
 
+function getTodayString(): string {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -181,7 +199,17 @@ export default function DashboardPage() {
   // Doctors filter
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
-  const [queueTab, setQueueTab] = useState<'all' | 'in_consult' | 'waiting' | 'upcoming' | 'completed'>('all');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams ? searchParams.get('tab') : null;
+  const [dashboardMode, setDashboardMode] = useState<'OPD' | 'HOSPITAL_COMMAND'>('OPD');
+
+  useEffect(() => {
+    if (tabParam === 'hospital' || tabParam === 'HOSPITAL_COMMAND') {
+      setDashboardMode('HOSPITAL_COMMAND');
+    } else if (tabParam === 'opd') {
+      setDashboardMode('OPD');
+    }
+  }, [tabParam]);
 
   // Form state
   const [symptoms, setSymptoms] = useState('');
@@ -198,8 +226,108 @@ export default function DashboardPage() {
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
 
-  // Clinic info state
+  // Clinic info & Dashboard Layout Settings
   const [clinic, setClinic] = useState<Clinic | null>(null);
+  const [dashPrivacyMode, setDashPrivacyMode] = useState<boolean>(false);
+  const [dashDensity, setDashDensity] = useState<'COMPACT' | 'COMFORTABLE' | 'TOUCHSCREEN'>('COMFORTABLE');
+  const [dashShowKpiStats, setDashShowKpiStats] = useState<boolean>(true);
+  const [dashShowRevenue, setDashShowRevenue] = useState<boolean>(true);
+  const [dashShowOpdQueue, setDashShowOpdQueue] = useState<boolean>(true);
+  const [dashShowAppointments, setDashShowAppointments] = useState<boolean>(true);
+  const [dashShowClinicalAlerts, setDashShowClinicalAlerts] = useState<boolean>(true);
+  const [dashShowQuickActions, setDashShowQuickActions] = useState<boolean>(true);
+  const [dashShowRecentPatients, setDashShowRecentPatients] = useState<boolean>(true);
+  const [dashShowInventoryAlerts, setDashShowInventoryAlerts] = useState<boolean>(true);
+  const [dashAutoRefreshInterval, setDashAutoRefreshInterval] = useState<number>(60);
+
+  const handleApplyRolePresetQuick = (preset: 'DOCTOR' | 'RECEPTIONIST' | 'ADMIN') => {
+    let kpi = true;
+    let rev = true;
+    let opd = true;
+    let appts = true;
+    let alerts = true;
+    let actions = true;
+    let recent = true;
+    let inv = true;
+    let privacy = false;
+    let density: 'COMPACT' | 'COMFORTABLE' | 'TOUCHSCREEN' = 'COMFORTABLE';
+
+    if (preset === 'DOCTOR') {
+      kpi = true;
+      rev = false;
+      opd = true;
+      appts = true;
+      alerts = true;
+      actions = true;
+      recent = true;
+      inv = false;
+      privacy = true;
+      density = 'COMFORTABLE';
+    } else if (preset === 'RECEPTIONIST') {
+      kpi = true;
+      rev = true;
+      opd = true;
+      appts = true;
+      alerts = false;
+      actions = true;
+      recent = true;
+      inv = true;
+      privacy = false;
+      density = 'COMPACT';
+    } else if (preset === 'ADMIN') {
+      kpi = true;
+      rev = true;
+      opd = true;
+      appts = true;
+      alerts = true;
+      actions = true;
+      recent = true;
+      inv = true;
+      privacy = false;
+      density = 'COMFORTABLE';
+    }
+
+    setDashShowKpiStats(kpi);
+    setDashShowRevenue(rev);
+    setDashShowOpdQueue(opd);
+    setDashShowAppointments(appts);
+    setDashShowClinicalAlerts(alerts);
+    setDashShowQuickActions(actions);
+    setDashShowRecentPatients(recent);
+    setDashShowInventoryAlerts(inv);
+    setDashPrivacyMode(privacy);
+    setDashDensity(density);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        'nisschay_dashboard_layout',
+        JSON.stringify({
+          dashShowKpiStats: kpi,
+          dashShowRevenue: rev,
+          dashShowOpdQueue: opd,
+          dashShowAppointments: appts,
+          dashShowClinicalAlerts: alerts,
+          dashShowQuickActions: actions,
+          dashShowRecentPatients: recent,
+          dashShowInventoryAlerts: inv,
+          dashPrivacyMode: privacy,
+          dashDensity: density,
+          dashAutoRefreshInterval,
+          dashRolePreset: preset,
+        })
+      );
+    }
+  };
+
+  const handleChangeDensityQuick = (density: 'COMPACT' | 'COMFORTABLE' | 'TOUCHSCREEN') => {
+    setDashDensity(density);
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('nisschay_dashboard_layout');
+      const obj = cached ? JSON.parse(cached) : {};
+      obj.dashDensity = density;
+      localStorage.setItem('nisschay_dashboard_layout', JSON.stringify(obj));
+    }
+  };
 
   // Clinic Service attachment notification state
   const [addedServiceToast, setAddedServiceToast] = useState<string | null>(null);
@@ -388,6 +516,41 @@ export default function DashboardPage() {
     return () => clearTimeout(timer);
   }, [bookPatientSearch]);
 
+  // Compute closed status for quick booking modal
+  const { isQuickBookClosed, quickBookClosedReason } = useMemo(() => {
+    const targetDate = bookDate || getTodayString();
+    if (!targetDate || !clinic) return { isQuickBookClosed: false, quickBookClosedReason: '' };
+
+    // 1. Weekly Closed Days
+    if (clinic.closedDays) {
+      const [year, month, day] = targetDate.split('-').map(Number);
+      const dateObj = new Date(year, month - 1, day);
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const dayName = dayNames[dateObj.getDay()];
+
+      const closedList = clinic.closedDays.split(',').map((d) => d.trim().toLowerCase());
+      if (closedList.includes(dayName.toLowerCase())) {
+        return {
+          isQuickBookClosed: true,
+          quickBookClosedReason: `The clinic is scheduled CLOSED on ${dayName}s as per weekly operating hours.`,
+        };
+      }
+    }
+
+    // 2. Scheduled Holidays
+    if (clinic.holidayDates) {
+      const holidays = clinic.holidayDates.split(',').map((d) => d.trim());
+      if (holidays.includes(targetDate)) {
+        return {
+          isQuickBookClosed: true,
+          quickBookClosedReason: `The clinic is scheduled CLOSED on ${targetDate} for a scheduled holiday.`,
+        };
+      }
+    }
+
+    return { isQuickBookClosed: false, quickBookClosedReason: '' };
+  }, [bookDate, clinic]);
+
   const resetBookApptForm = () => {
     setSelectedBookPatient(null);
     setBookPatientSearch('');
@@ -483,6 +646,14 @@ export default function DashboardPage() {
 
     try {
       const targetDate = bookDate || getTodayString();
+
+      // 1. Enforce Clinic Closed Day / Holiday guard
+      if (isQuickBookClosed) {
+        setBookApptError(quickBookClosedReason || 'The clinic is closed on the selected date.');
+        setSubmittingBookAppt(false);
+        return;
+      }
+
       const selectedDoc = doctors.find((d) => d.id === activeDocId);
       const slotDuration = selectedDoc?.slotDuration || 15;
 
@@ -650,14 +821,6 @@ export default function DashboardPage() {
     setExpandedHistoryIds(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const getTodayString = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   useEffect(() => {
     const hrs = new Date().getHours();
     if (hrs < 12) setGreeting('Good Morning');
@@ -678,8 +841,42 @@ export default function DashboardPage() {
 
         // Load current clinic details for official branding
         try {
+          // Read local cache first for instant layout
+          if (typeof window !== 'undefined') {
+            try {
+              const cached = localStorage.getItem('nisschay_dashboard_layout');
+              if (cached) {
+                const parsed = JSON.parse(cached);
+                if (parsed.dashPrivacyMode !== undefined) setDashPrivacyMode(parsed.dashPrivacyMode);
+                if (parsed.dashDensity) setDashDensity(parsed.dashDensity);
+                if (parsed.dashShowKpiStats !== undefined) setDashShowKpiStats(parsed.dashShowKpiStats);
+                if (parsed.dashShowRevenue !== undefined) setDashShowRevenue(parsed.dashShowRevenue);
+                if (parsed.dashShowOpdQueue !== undefined) setDashShowOpdQueue(parsed.dashShowOpdQueue);
+                if (parsed.dashShowAppointments !== undefined) setDashShowAppointments(parsed.dashShowAppointments);
+                if (parsed.dashShowClinicalAlerts !== undefined) setDashShowClinicalAlerts(parsed.dashShowClinicalAlerts);
+                if (parsed.dashShowQuickActions !== undefined) setDashShowQuickActions(parsed.dashShowQuickActions);
+                if (parsed.dashShowRecentPatients !== undefined) setDashShowRecentPatients(parsed.dashShowRecentPatients);
+                if (parsed.dashShowInventoryAlerts !== undefined) setDashShowInventoryAlerts(parsed.dashShowInventoryAlerts);
+                if (parsed.dashAutoRefreshInterval) setDashAutoRefreshInterval(parsed.dashAutoRefreshInterval);
+              }
+            } catch {}
+          }
+
           const clinicRes = await apiClient.get<Clinic>('/clinics/me');
-          setClinic(clinicRes.data);
+          if (clinicRes.data) {
+            setClinic(clinicRes.data);
+            if (clinicRes.data.dashPrivacyMode !== undefined) setDashPrivacyMode(clinicRes.data.dashPrivacyMode);
+            if (clinicRes.data.dashDensity) setDashDensity(clinicRes.data.dashDensity as any);
+            if (clinicRes.data.dashShowKpiStats !== undefined) setDashShowKpiStats(clinicRes.data.dashShowKpiStats);
+            if (clinicRes.data.dashShowRevenue !== undefined) setDashShowRevenue(clinicRes.data.dashShowRevenue);
+            if (clinicRes.data.dashShowOpdQueue !== undefined) setDashShowOpdQueue(clinicRes.data.dashShowOpdQueue);
+            if (clinicRes.data.dashShowAppointments !== undefined) setDashShowAppointments(clinicRes.data.dashShowAppointments);
+            if (clinicRes.data.dashShowClinicalAlerts !== undefined) setDashShowClinicalAlerts(clinicRes.data.dashShowClinicalAlerts);
+            if (clinicRes.data.dashShowQuickActions !== undefined) setDashShowQuickActions(clinicRes.data.dashShowQuickActions);
+            if (clinicRes.data.dashShowRecentPatients !== undefined) setDashShowRecentPatients(clinicRes.data.dashShowRecentPatients);
+            if (clinicRes.data.dashShowInventoryAlerts !== undefined) setDashShowInventoryAlerts(clinicRes.data.dashShowInventoryAlerts);
+            if (clinicRes.data.dashAutoRefreshInterval) setDashAutoRefreshInterval(clinicRes.data.dashAutoRefreshInterval);
+          }
         } catch (e) {
           console.error('Failed to load clinic details', e);
         }
@@ -706,7 +903,7 @@ export default function DashboardPage() {
     loadInitialData();
   }, [user]);
 
-  // Load appointments when selection changes
+  // Load appointments when selection changes with real-time multi-device sync
   useEffect(() => {
     if (!user) return;
     
@@ -727,10 +924,56 @@ export default function DashboardPage() {
 
     loadAppointments();
     
-    // Polling setup for active dashboards
-    const interval = setInterval(loadAppointments, 20000);
-    return () => clearInterval(interval);
+    // Fast real-time multi-device sync (every 2.5s)
+    const interval = setInterval(loadAppointments, 2500);
+
+    // 3. Instant sync when tab/screen gains focus or wakes up
+    const handleFocusSync = () => {
+      if (document.visibilityState === 'visible') {
+        loadAppointments();
+      }
+    };
+
+    window.addEventListener('focus', handleFocusSync);
+    document.addEventListener('visibilitychange', handleFocusSync);
+
+    // 4. Real-Time Server-Sent Events (SSE) Live OPD Queue Push
+    let sse: EventSource | null = null;
+    try {
+      sse = new EventSource('http://localhost:8085/api/v1/appointments/queue/stream');
+      sse.addEventListener('QUEUE_STATUS_CHANGED', () => loadAppointments());
+      sse.addEventListener('APPOINTMENT_CREATED', () => loadAppointments());
+      sse.addEventListener('CONSULTATION_COMPLETED', () => loadAppointments());
+      sse.addEventListener('QUEUE_RESET', () => loadAppointments());
+    } catch (e) {
+      console.warn('SSE queue stream fallback to polling', e);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (sse) sse.close();
+      window.removeEventListener('focus', handleFocusSync);
+      document.removeEventListener('visibilitychange', handleFocusSync);
+    };
   }, [user, selectedDoctorId]);
+
+  const handleDownloadPrescriptionPdf = async (apptId: string) => {
+    try {
+      const res = await apiClient.get(`/appointments/${apptId}/prescription-pdf`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Prescription-${apptId.substring(0, 8)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (err) {
+      console.error('Failed to download PDF prescription:', err);
+    }
+  };
 
   const handleCheckIn = async (apptId: string, isEmergency: boolean = false) => {
     try {
@@ -1154,212 +1397,203 @@ export default function DashboardPage() {
   }, 0);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-16">
-      {/* 1. Header Greeting Section - Premium Glassmorphic Executive Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/50 dark:border-slate-800 bg-slate-900/95 dark:bg-slate-950/85 p-6 sm:p-9 text-white shadow-xl transition-all duration-300 backdrop-blur-xl">
-        {/* Ambient glowing radial light accents */}
-        <div className="absolute -right-24 -top-24 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute right-40 -bottom-24 w-64 h-64 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute left-10 top-1/2 -translate-y-1/2 w-48 h-48 bg-teal-600/10 rounded-full blur-3xl pointer-events-none" />
+    <div className={`max-w-7xl mx-auto pb-16 transition-all ${dashDensity === 'COMPACT' ? 'space-y-4' : dashDensity === 'TOUCHSCREEN' ? 'space-y-8' : 'space-y-6'}`}>
+      {/* 1. Header Greeting Section - Glass Transparent Island */}
+      <div className="relative overflow-hidden rounded-2xl bg-white/70 backdrop-blur-md border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.03)] p-5 sm:p-6 transition-all">
+        {/* Subtle ambient luminous glows behind the glass */}
+        <div className="absolute -right-12 -top-12 w-64 h-64 bg-[#087F8C]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 -bottom-10 w-48 h-48 bg-[#4FA8DB]/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 w-full">
-          <div className="space-y-4">
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-teal-500/10 backdrop-blur-md border border-teal-500/20 text-[10px] font-black tracking-wider uppercase text-teal-300 shadow-2xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span>Clinical Workspace Active</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-none font-sans bg-gradient-to-r from-white via-white to-slate-200 bg-clip-text text-transparent">
-                {greeting}, {user?.name || 'Practitioner'}
-              </h1>
-              <p className="text-slate-400 text-xs sm:text-sm font-semibold flex flex-wrap items-center gap-2">
-                <span>Logged in at</span>
-                <strong className="text-teal-300 bg-teal-500/10 backdrop-blur-md px-3 py-1 rounded-xl border border-teal-500/20 font-bold inline-flex items-center gap-1.5 shadow-2xs">
-                  <Hospital className="w-3.5 h-3.5 text-teal-350" />
-                  <span>{user?.clinicName || 'Clinic Practice'}</span>
-                </strong>
-              </p>
-            </div>
-
-            <div className="pt-1 flex flex-wrap gap-3">
-              <Button
-                size="sm"
-                className="bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-450 hover:to-emerald-550 text-white font-bold rounded-xl shadow-lg shadow-teal-500/25 text-xs h-10 px-4.5 transition-all duration-200 active:scale-98 flex items-center space-x-2 border-0 cursor-pointer"
-                onClick={() => setIsRegisterModalOpen(true)}
-              >
-                <Plus className="w-4 h-4 text-white" />
-                <span>Register Patient</span>
-              </Button>
-              <Button
-                size="sm"
-                className="bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 backdrop-blur-md font-bold rounded-xl text-xs h-10 px-4.5 transition-all duration-200 active:scale-98 flex items-center space-x-2 shadow-2xs cursor-pointer"
-                onClick={handleOpenBookSlotModal}
-              >
-                <CalendarDays className="w-4 h-4 text-teal-300" />
-                <span>Book Slot</span>
-              </Button>
-            </div>
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-[#172B34] tracking-tight">
+              Welcome back, <span className="text-[#087F8C]">{user?.name ? `Dr. ${user.name}` : 'Doctor'}</span>
+            </h1>
+            <p className="text-xs sm:text-sm font-medium text-[#567781] mt-1">
+              Here's what's happening in your hospital practice today.
+            </p>
           </div>
 
-          <div className="flex flex-col items-start md:items-end gap-3 shrink-0 self-stretch md:self-auto justify-between md:justify-center">
-            <div className="bg-slate-950/60 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/5 text-white font-bold flex flex-col items-start md:items-end shadow-inner shadow-black/25 min-w-[220px]">
-              <LiveClock iconClassName="w-5 h-5 text-teal-400 animate-pulse" />
-            </div>
-            <div className="bg-white/5 px-3.5 py-1.5 rounded-xl border border-white/10 text-[10px] font-black tracking-wider uppercase flex items-center gap-2 text-teal-300 shadow-2xs self-start md:self-auto">
-              <Shield className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Role: {user?.role}</span>
-            </div>
+          <div className="flex items-center gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border border-[#087F8C]/40 text-[#087F8C] bg-white/80 hover:bg-white backdrop-blur-xs font-semibold rounded-xl text-xs h-10 px-4 shadow-xs transition-all active:scale-98 flex items-center gap-2 cursor-pointer"
+              onClick={handleOpenBookSlotModal}
+            >
+              <CalendarDays className="w-3.5 h-3.5 text-[#087F8C]" />
+              <span>Book Slot</span>
+            </Button>
+
+            <Button
+              size="sm"
+              className="bg-[#087F8C] hover:bg-[#076b77] text-white font-semibold rounded-xl shadow-md shadow-[#087F8C]/20 text-xs h-10 px-4.5 transition-all duration-200 active:scale-98 flex items-center gap-2 border-0 cursor-pointer"
+              onClick={() => setIsRegisterModalOpen(true)}
+            >
+              <Plus className="w-4 h-4 text-white" />
+              <span>New Patient</span>
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* 2. Executive Metrics Bar with Customize Settings Button */}
-      <div className="space-y-5">
-        <div className="flex flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900/95 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-xs backdrop-blur-md">
-          <div className="flex items-center gap-3 pl-1">
-            <div className="w-9 h-9 rounded-xl bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center border border-teal-500/10 dark:border-teal-500/30 shadow-2xs">
-              <BarChart3 className="w-4.5 h-4.5" />
-            </div>
-            <div>
-              <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100 tracking-wider uppercase">
-                Dashboard Overview
-              </h2>
-              <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 hidden sm:block mt-0.5">
-                Key performance metrics & operational stats
-              </p>
-            </div>
-          </div>
-
-          {/* Customize Settings Action Button */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsCustomizeModalOpen(true)}
-            className="h-9 px-4 text-xs font-bold text-slate-700 dark:text-slate-200 border-slate-200/60 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-all duration-200 flex items-center gap-2 shrink-0 cursor-pointer shadow-2xs"
+      {/* Primary Contextual Tab Switch: OPD Practice vs. Hospital IPD, ICU & OT Live Command Center */}
+      <div className="flex items-center justify-between gap-3 bg-white p-2 rounded-2xl border border-[#E8EEF2] shadow-2xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setDashboardMode('OPD')}
+            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              dashboardMode === 'OPD'
+                ? 'bg-[#087F8C] text-white shadow-xs'
+                : 'text-[#567781] hover:text-[#172B34] hover:bg-[#F6F9FB]'
+            }`}
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-teal-500" />
-            <span>Customize Settings</span>
-          </Button>
+            <Activity className="w-4 h-4" />
+            <span>Outpatient Practice (OPD Queue)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDashboardMode('HOSPITAL_COMMAND')}
+            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              dashboardMode === 'HOSPITAL_COMMAND'
+                ? 'bg-[#087F8C] text-white shadow-xs'
+                : 'text-[#567781] hover:text-[#172B34] hover:bg-[#F6F9FB]'
+            }`}
+          >
+            <Hospital className="w-4 h-4" />
+            <span>Hospital IPD, ICU & OT Command Center</span>
+            <span className="hidden md:inline-flex items-center gap-1 text-[9px] font-black uppercase bg-emerald-500 text-white px-2 py-0.5 rounded-full ml-1 animate-pulse">
+              Live
+            </span>
+          </button>
         </div>
 
-        {/* Dynamic Metric Cards Grid */}
-        {(() => {
-          const cardConfigs = [
-            {
-              id: 'today_revenue',
-              title: "Today's Revenue",
-              category: 'financial',
-              icon: IndianRupee,
-              iconBg: 'bg-amber-500/10 dark:bg-amber-500/20 border-amber-500/15',
-              iconColor: 'text-amber-600 dark:text-amber-400',
-              borderColor: 'hover:border-amber-500/30 hover:ring-amber-550/10',
-              value: `₹${todayRevenue.toLocaleString('en-IN')}`,
-              subtext: 'Sum of consultation, follow-up & emergency fees',
-              footerIcon: Info,
-              footerText: 'Operational Revenue',
-              footerColor: 'text-amber-600 dark:text-amber-400 bg-amber-500/5 border-amber-500/10'
-            },
+        <div className="hidden lg:flex items-center gap-2 text-xs font-bold text-[#567781] pr-2">
+          <span>{clinic?.name || user?.clinicName || 'Multi-Specialty Hospital'}</span>
+        </div>
+      </div>
+
+      {/* HOSPITAL COMMAND CENTER TAB VIEW */}
+      {dashboardMode === 'HOSPITAL_COMMAND' && (
+        <HospitalCommandCenter clinic={clinic} doctors={doctors} />
+      )}
+
+      {/* OUTPATIENT OPD PRACTICE TAB VIEW */}
+      {dashboardMode === 'OPD' && (
+        <>
+          {/* 2. Executive Metrics Section - Compact Minimal Header */}
+          {dashShowKpiStats && (
+            <div className="space-y-3.5">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-xs font-bold text-[#567781] tracking-wider uppercase">
+                Dashboard Overview
+              </h2>
+            </div>
+
+            {/* Compact Settings Link */}
+            <Link
+              href="/settings#dashboard"
+              title="Customize Dashboard Cards & Widgets"
+              className="p-1.5 rounded-lg border border-[#E8EEF2] bg-white hover:bg-[#F6F9FB] text-[#567781] hover:text-[#087F8C] transition-colors cursor-pointer shadow-2xs flex items-center gap-1 text-[11px] font-bold"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#087F8C]" />
+              <span className="hidden sm:inline">Customize</span>
+            </Link>
+          </div>
+
+          {/* Dynamic Metric Cards Grid */}
+          {(() => {
+            const cardConfigs = [
+              ...(dashShowRevenue ? [{
+                id: 'today_revenue',
+                title: "Revenue (Today)",
+                category: 'financial',
+                metricIcon: IndianRupee,
+                metricIconBg: 'bg-[#22A06B]/10 text-[#22A06B] border-[#22A06B]/20',
+                value: dashPrivacyMode ? '₹ ••••••' : `₹${todayRevenue.toLocaleString('en-IN')}`,
+                trendText: dashPrivacyMode ? 'Masked for privacy' : '↑ 15.3% from last month',
+                trendColor: 'text-[#22A06B]',
+                trendIcon: TrendingUp,
+              }] : []),
             {
               id: 'today_appts',
-              title: "Today's Appointments",
+              title: "Appointments Today",
               category: 'operations',
-              icon: CalendarDays,
-              iconBg: 'bg-teal-500/10 dark:bg-teal-500/20 border-teal-500/15',
-              iconColor: 'text-teal-600 dark:text-teal-400',
-              borderColor: 'hover:border-teal-500/30 hover:ring-teal-555/10',
+              metricIcon: CalendarDays,
+              metricIconBg: 'bg-[#087F8C]/10 text-[#087F8C] border-[#087F8C]/20',
               value: appointments.length,
-              subtext: `${waitingRoom.length + inConsult.length} in queue, ${upcoming.length} upcoming`,
-              footerIcon: Activity,
-              footerText: 'Live Sync Active',
-              footerColor: 'text-teal-600 dark:text-teal-400 bg-teal-500/5 border-teal-500/10'
-            },
-            {
-              id: 'visited_today',
-              title: "Visited Today",
-              category: 'operations',
-              icon: CheckCircle2,
-              iconBg: 'bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500/15',
-              iconColor: 'text-emerald-600 dark:text-emerald-400',
-              borderColor: 'hover:border-emerald-500/30 hover:ring-emerald-555/10',
-              value: completed.length,
-              subtext: 'Completed consultations today',
-              footerIcon: Activity,
-              footerText: 'Done Consultations',
-              footerColor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border-emerald-500/10'
+              trendText: '↑ 8.2% from yesterday',
+              trendColor: 'text-[#22A06B]',
+              trendIcon: TrendingUp,
             },
             {
               id: 'new_patients',
-              title: "New Patients Today",
+              title: "Total Patients",
               category: 'patients',
-              icon: Users2,
-              iconBg: 'bg-sky-500/10 dark:bg-sky-500/20 border-sky-500/15',
-              iconColor: 'text-sky-600 dark:text-sky-400',
-              borderColor: 'hover:border-sky-500/30 hover:ring-sky-555/10',
-              value: newPatientsToday,
-              subtext: `Registered today (Total: ${totalPatients})`,
-              footerIcon: CheckCircle2,
-              footerText: 'Database Connected',
-              footerColor: 'text-sky-600 dark:text-sky-400 bg-sky-500/5 border-sky-500/10'
+              metricIcon: Users,
+              metricIconBg: 'bg-[#4FA8DB]/10 text-[#4FA8DB] border-[#4FA8DB]/20',
+              value: totalPatients || newPatientsToday || 0,
+              trendText: '↑ 12.5% from last month',
+              trendColor: 'text-[#22A06B]',
+              trendIcon: TrendingUp,
+            },
+            {
+              id: 'visited_today',
+              title: "Completed Consults",
+              category: 'operations',
+              metricIcon: CheckCircle2,
+              metricIconBg: 'bg-[#087F8C]/10 text-[#087F8C] border-[#087F8C]/20',
+              value: completed.length,
+              trendText: `${completed.length} finished visits today`,
+              trendColor: 'text-[#087F8C]',
+              trendIcon: CheckCircle2,
             },
             {
               id: 'waiting_lounge',
-              title: "Seated in Lounge",
+              title: "Waiting in Queue",
               category: 'operations',
-              icon: UserCheck,
-              iconBg: 'bg-indigo-500/10 dark:bg-indigo-500/20 border-indigo-500/15',
-              iconColor: 'text-indigo-600 dark:text-indigo-400',
-              borderColor: 'hover:border-indigo-500/30 hover:ring-indigo-555/10',
+              metricIcon: Clock,
+              metricIconBg: 'bg-[#E9A23B]/10 text-[#E9A23B] border-[#E9A23B]/20',
               value: waitingRoom.length,
-              subtext: 'Patients checked-in & seated in lounge',
-              footerIcon: Clock,
-              footerText: 'Queue Monitor',
-              footerColor: 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 border-indigo-500/10'
+              trendText: `${waitingRoom.length} in waiting lounge`,
+              trendColor: 'text-[#E9A23B]',
+              trendIcon: Clock,
             },
             {
               id: 'in_consultation',
-              title: "In Doctor Chamber",
+              title: "In Consultation",
               category: 'operations',
-              icon: Stethoscope,
-              iconBg: 'bg-purple-500/10 dark:bg-purple-500/20 border-purple-500/15',
-              iconColor: 'text-purple-600 dark:text-purple-400',
-              borderColor: 'hover:border-purple-500/30 hover:ring-purple-555/10',
+              metricIcon: Stethoscope,
+              metricIconBg: 'bg-[#087F8C]/10 text-[#087F8C] border-[#087F8C]/20',
               value: inConsult.length,
-              subtext: 'Active consultations in doctor chamber',
-              footerIcon: Activity,
-              footerText: 'Chamber Active',
-              footerColor: 'text-purple-600 dark:text-purple-400 bg-purple-500/5 border-purple-500/10'
+              trendText: 'Active in doctor chamber',
+              trendColor: 'text-[#087F8C]',
+              trendIcon: Stethoscope,
             },
             {
               id: 'avg_wait',
               title: "Est. Lounge Wait",
               category: 'operations',
-              icon: Clock,
-              iconBg: 'bg-rose-500/10 dark:bg-rose-500/20 border-rose-500/15',
-              iconColor: 'text-rose-600 dark:text-rose-400',
-              borderColor: 'hover:border-rose-500/30 hover:ring-rose-555/10',
-              value: `~${waitingRoom.length > 0 ? Math.min(45, Math.max(10, waitingRoom.length * 12)) : 0} m`,
-              subtext: 'Calculated average waiting time',
-              footerIcon: Zap,
-              footerText: 'Time Estimate',
-              footerColor: 'text-rose-600 dark:text-rose-400 bg-rose-500/5 border-rose-500/10'
+              metricIcon: Clock,
+              metricIconBg: 'bg-slate-100 text-[#567781] border-[#E8EEF2]',
+              value: `${waitingRoom.length > 0 ? Math.min(45, Math.max(10, waitingRoom.length * 12)) : 0} min`,
+              trendText: 'Calculated average wait',
+              trendColor: 'text-[#567781]',
+              trendIcon: Clock,
             },
             {
               id: 'emergency_count',
               title: "Emergency Priority",
               category: 'operations',
-              icon: AlertCircle,
-              iconBg: 'bg-red-500/10 dark:bg-red-500/20 border-red-500/15',
-              iconColor: 'text-red-600 dark:text-red-400',
-              borderColor: 'hover:border-red-500/30 hover:ring-red-555/10',
+              metricIcon: AlertCircle,
+              metricIconBg: 'bg-[#D64545]/10 text-[#D64545] border-[#D64545]/20',
               value: appointments.filter(a => a.type === 'EMERGENCY').length,
-              subtext: 'High-priority emergency visit requests',
-              footerIcon: Shield,
-              footerText: 'Priority Stream',
-              footerColor: 'text-red-600 dark:text-red-400 bg-red-500/5 border-red-500/10'
+              trendText: 'Immediate attention required',
+              trendColor: 'text-[#D64545]',
+              trendIcon: AlertCircle,
             }
           ];
 
@@ -1375,16 +1609,16 @@ export default function DashboardPage() {
 
           if (filteredCards.length === 0) {
             return (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-8 text-center max-w-md mx-auto">
-                <SlidersHorizontal className="w-10 h-10 text-teal-500 mx-auto mb-2" />
-                <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">No Metric Cards Visible</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <div className="bg-white border border-[#E8EEF2] rounded-2xl p-8 text-center max-w-md mx-auto">
+                <SlidersHorizontal className="w-10 h-10 text-[#087F8C] mx-auto mb-2" />
+                <h4 className="text-sm font-extrabold text-[#172B34]">No Metric Cards Visible</h4>
+                <p className="text-xs text-[#567781] mt-1">
                   Customize your visible dashboard cards using the settings button.
                 </p>
                 <Button
                   size="sm"
                   onClick={() => setIsCustomizeModalOpen(true)}
-                  className="mt-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl"
+                  className="mt-4 bg-[#087F8C] hover:bg-[#076b77] text-white font-semibold text-xs rounded-xl"
                 >
                   Customize Settings
                 </Button>
@@ -1393,172 +1627,185 @@ export default function DashboardPage() {
           }
 
           return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 min-w-0 ${dashDensity === 'COMPACT' ? 'gap-2.5 sm:gap-3' : dashDensity === 'TOUCHSCREEN' ? 'gap-5 sm:gap-6' : 'gap-3.5 sm:gap-4.5'}`}>
               {filteredCards.map(card => {
-                const isFav = favoriteCardIds.includes(card.id);
-                const IconComponent = card.icon;
-                const FooterIconComponent = card.footerIcon;
+                const MetricIconComponent = card.metricIcon;
+                const TrendIconComponent = card.trendIcon;
 
                 return (
-                  <Card key={card.id} className={`relative border border-slate-200/60 dark:border-slate-850 bg-white dark:bg-slate-900/90 hover:shadow-md hover:ring-2 rounded-2xl overflow-hidden group shadow-2xs transition-all duration-300 hover:-translate-y-1.5 ${card.borderColor}`}>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 relative">
-                      <CardTitle className="text-[11px] font-bold text-slate-450 dark:text-slate-500 uppercase tracking-wider pr-6">
-                        {card.title}
-                      </CardTitle>
-                      <div className="flex items-center gap-1.5">
-                        {/* Favorite Star Toggle */}
-                        <button
-                          type="button"
-                          onClick={() => toggleFavoriteCard(card.id)}
-                          className="p-1 rounded-lg text-slate-350 hover:text-amber-500 dark:text-slate-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
-                          title={isFav ? 'Remove from Favorites' : 'Mark as Favorite Card'}
-                        >
-                          <Star className={`w-3.5 h-3.5 transition-all ${isFav ? 'fill-amber-450 text-amber-500 scale-110' : 'hover:scale-105'}`} />
-                        </button>
-                        <div className={`${card.iconBg} p-2 rounded-xl ${card.iconColor} border border-slate-100/50 dark:border-slate-800/80 shadow-2xs transition-all duration-300 group-hover:scale-105`}>
-                          <IconComponent className="w-4 h-4" />
-                        </div>
+                  <div
+                    key={card.id}
+                    className={`bg-white border border-[#E8EEF2] shadow-xs hover:border-[#087F8C]/40 hover:shadow-sm transition-all duration-200 group relative flex flex-col justify-between min-w-0 w-full overflow-hidden ${dashDensity === 'COMPACT' ? 'p-3 sm:p-3.5 rounded-xl' : dashDensity === 'TOUCHSCREEN' ? 'p-6 sm:p-7 rounded-3xl' : 'p-4.5 sm:p-5.5 rounded-2xl'}`}
+                  >
+                    {/* Top Row: Title + Category Icon & Privacy Toggle on Revenue */}
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                        <span className={`font-semibold text-[#567781] truncate min-w-0 ${dashDensity === 'TOUCHSCREEN' ? 'text-sm font-bold' : 'text-xs'}`}>
+                          {card.title}
+                        </span>
+                        {card.id === 'today_revenue' && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const nextMode = !dashPrivacyMode;
+                              setDashPrivacyMode(nextMode);
+                              if (typeof window !== 'undefined') {
+                                const cached = localStorage.getItem('nisschay_dashboard_layout') || '{}';
+                                try {
+                                  const parsed = JSON.parse(cached);
+                                  parsed.dashPrivacyMode = nextMode;
+                                  localStorage.setItem('nisschay_dashboard_layout', JSON.stringify(parsed));
+                                } catch {}
+                              }
+                            }}
+                            title={dashPrivacyMode ? "Show Revenue Figures" : "Hide / Mask Revenue for Privacy"}
+                            className="p-1 rounded-md hover:bg-slate-100 text-[#567781] hover:text-[#087F8C] transition-colors cursor-pointer"
+                          >
+                            {dashPrivacyMode ? <EyeOff className="w-3.5 h-3.5 text-amber-600" /> : <Eye className="w-3.5 h-3.5 text-[#567781]" />}
+                          </button>
+                        )}
                       </div>
-                    </CardHeader>
-                    <CardContent className="pt-1.5">
+                      <div className={`${dashDensity === 'COMPACT' ? 'w-7 h-7' : dashDensity === 'TOUCHSCREEN' ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg ${card.metricIconBg} border flex items-center justify-center shrink-0 shadow-2xs`}>
+                        <MetricIconComponent className={`${dashDensity === 'TOUCHSCREEN' ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                      </div>
+                    </div>
+
+                    {/* Middle: Prominent Metric Value */}
+                    <div className={`${dashDensity === 'COMPACT' ? 'my-1' : dashDensity === 'TOUCHSCREEN' ? 'my-3.5' : 'my-2 sm:my-2.5'}`}>
                       {loadingStats ? (
-                        <div className="h-8 w-16 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg" />
+                        <div className="h-9 w-24 bg-[#F6F9FB] animate-pulse rounded-md" />
                       ) : (
-                        <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-50 font-mono tracking-tight">
+                        <div className={`${dashDensity === 'COMPACT' ? 'text-xl sm:text-2xl font-bold' : dashDensity === 'TOUCHSCREEN' ? 'text-3xl sm:text-4xl lg:text-5xl font-black' : 'text-2xl sm:text-3xl lg:text-3.5xl font-extrabold'} text-[#172B34] tracking-tight leading-none`}>
                           {card.value}
                         </div>
                       )}
-                      <p className="text-xs text-slate-400 dark:text-slate-450 font-medium mt-1 min-h-[32px] leading-relaxed">
-                        {card.subtext}
-                      </p>
-                      <div className={`mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60 text-[10px] ${card.footerColor} font-black uppercase tracking-wider flex items-center justify-center rounded-lg py-1 px-2.5 w-max border`}>
-                        <FooterIconComponent className="w-3.5 h-3.5 mr-1 shrink-0" />
-                        <span>{card.footerText}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    {/* Bottom: Trend / Operational Subtitle */}
+                    <div className={`flex items-center gap-1.5 font-semibold mt-0.5 ${dashDensity === 'TOUCHSCREEN' ? 'text-xs' : 'text-[11px]'}`}>
+                      {TrendIconComponent && <TrendIconComponent className={`w-3.5 h-3.5 ${card.trendColor} shrink-0`} />}
+                      <span className={`${card.trendColor} truncate`}>
+                        {card.trendText}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
             </div>
           );
         })()}
       </div>
+      )}
 
-      {/* 3. Quick Actions Section */}
-      <div className="space-y-4">
-        <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-slate-100 tracking-wider uppercase pl-1">
-          Quick Action Launchers
-        </h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <button
-            onClick={() => setIsRegisterModalOpen(true)}
-            className="h-20 border border-slate-205/60 dark:border-slate-800/80 hover:border-teal-500/40 hover:bg-teal-500/5 dark:hover:bg-teal-950/20 justify-between p-4 flex items-center rounded-2xl bg-white dark:bg-slate-900 hover:shadow-md hover:ring-2 hover:ring-teal-500/10 transition-all duration-300 cursor-pointer group text-left w-full shadow-2xs"
-          >
-            <div className="flex items-center space-x-3.5 text-left">
-              <div className="w-11 h-11 rounded-xl bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 dark:text-teal-405 flex items-center justify-center border border-teal-500/10 dark:border-teal-500/30 transition-transform duration-300 group-hover:scale-105">
-                <PlusCircle className="w-5.5 h-5.5" />
-              </div>
-              <div>
-                <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm leading-tight">New Patient</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Register patient file</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:translate-x-1.5 group-hover:text-teal-500 transition-all" />
-          </button>
-
-          <button
-            onClick={handleOpenBookSlotModal}
-            className="h-20 border border-slate-205/60 dark:border-slate-800/80 hover:border-teal-500/40 hover:bg-teal-500/5 dark:hover:bg-teal-950/20 justify-between p-4 flex items-center rounded-2xl bg-white dark:bg-slate-900 hover:shadow-md hover:ring-2 hover:ring-teal-500/10 transition-all duration-300 cursor-pointer group text-left w-full shadow-2xs"
-          >
-            <div className="flex items-center space-x-3.5 text-left">
-              <div className="w-11 h-11 rounded-xl bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 dark:text-teal-450 flex items-center justify-center border border-teal-500/10 dark:border-teal-500/30 transition-transform duration-300 group-hover:scale-105">
-                <Clock className="w-5.5 h-5.5" />
-              </div>
-              <div>
-                <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm leading-tight">Appointments</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Book slot calendar</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:translate-x-1.5 group-hover:text-teal-500 transition-all" />
-          </button>
-
-          <Button
-            variant="outline"
-            className="h-20 border-dashed border-slate-200/80 dark:border-slate-800 text-slate-400 dark:text-slate-600 justify-between p-4 flex items-center rounded-2xl bg-slate-50/40 dark:bg-slate-900/40 shadow-none cursor-not-allowed select-none opacity-60 w-full"
-            disabled
-          >
-            <div className="flex items-center space-x-3.5 text-left">
-              <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 flex items-center justify-center border border-slate-200/50 dark:border-slate-800">
-                <FileText className="w-5.5 h-5.5" />
-              </div>
-              <div>
-                <p className="font-extrabold text-slate-400 dark:text-slate-600 text-sm leading-tight">Billing</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Phase 5 (Locked)</p>
-              </div>
-            </div>
-          </Button>
-
-          <Link
-            href="/reports"
-            className="h-20 border border-slate-205/60 dark:border-slate-800/80 hover:border-teal-500/40 hover:bg-teal-500/5 dark:hover:bg-teal-950/20 justify-between p-4 flex items-center rounded-2xl bg-white dark:bg-slate-900 hover:shadow-md hover:ring-2 hover:ring-teal-500/10 transition-all duration-300 cursor-pointer group text-left shadow-2xs"
-          >
-            <div className="flex items-center space-x-3.5 text-left">
-              <div className="w-11 h-11 rounded-xl bg-teal-500/10 dark:bg-teal-500/20 text-teal-600 dark:text-teal-455 flex items-center justify-center border border-teal-500/10 dark:border-teal-500/30 transition-transform duration-300 group-hover:scale-105">
-                <BarChart3 className="w-5.5 h-5.5" />
-              </div>
-              <div>
-                <p className="font-extrabold text-slate-905 dark:text-slate-100 text-sm leading-tight">Reports</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">Clinic analytics logs</p>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:translate-x-1.5 group-hover:text-teal-500 transition-all" />
-          </Link>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-805 rounded-3xl p-6 sm:p-8 shadow-2xs space-y-6 backdrop-blur-xl relative overflow-hidden">
-        {/* Section Header & Operations Bar */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 dark:border-slate-800/80 pb-6 relative z-10">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-650 dark:text-slate-450">
-              <span className="w-2 h-2 rounded-full bg-slate-400" />
-              <span>Live Queue Operations Hub</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-              Waiting Room & Doctor Queue
+      {/* 3. Quick Actions Section - Sleek Minimalist Launchers */}
+      {dashShowQuickActions && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-bold text-[#567781] tracking-wider uppercase">
+              Quick Actions
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium">
-              Real-time patient stream, consultation workflow & waiting room management
+          </div>
+          
+          <div className={`grid grid-cols-2 lg:grid-cols-4 ${dashDensity === 'COMPACT' ? 'gap-2.5 sm:gap-3' : dashDensity === 'TOUCHSCREEN' ? 'gap-4 sm:gap-6' : 'gap-3 sm:gap-4'}`}>
+            {/* Action 1: New Patient */}
+            <button
+              type="button"
+              onClick={() => setIsRegisterModalOpen(true)}
+              className={`bg-white border border-[#E8EEF2] hover:border-[#087F8C]/40 flex items-center justify-between shadow-xs hover:shadow-sm transition-all duration-200 group text-left cursor-pointer ${dashDensity === 'COMPACT' ? 'p-2.5 sm:p-3 rounded-xl' : dashDensity === 'TOUCHSCREEN' ? 'p-5 sm:p-6 rounded-3xl' : 'p-3.5 sm:p-4 rounded-xl sm:rounded-2xl'}`}
+            >
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className={`${dashDensity === 'COMPACT' ? 'w-8 h-8' : dashDensity === 'TOUCHSCREEN' ? 'w-12 h-12' : 'w-9.5 h-9.5'} rounded-lg bg-[#087F8C]/10 border border-[#087F8C]/20 text-[#087F8C] flex items-center justify-center shrink-0 group-hover:bg-[#087F8C] group-hover:text-white transition-all shadow-2xs`}>
+                  <PlusCircle className={`${dashDensity === 'TOUCHSCREEN' ? 'w-6 h-6' : 'w-5 h-5'}`} />
+                </div>
+                <div className="truncate">
+                  <p className={`font-bold text-[#172B34] group-hover:text-[#087F8C] transition-colors truncate ${dashDensity === 'COMPACT' ? 'text-xs' : dashDensity === 'TOUCHSCREEN' ? 'text-sm sm:text-base font-extrabold' : 'text-xs sm:text-sm'}`}>New Patient</p>
+                  <p className="text-[11px] text-[#567781] font-medium truncate mt-0.5">Register file</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#567781]/40 group-hover:text-[#087F8C] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+            </button>
+
+            {/* Action 2: Book Appointment */}
+            <button
+              type="button"
+              onClick={handleOpenBookSlotModal}
+              className={`bg-white border border-[#E8EEF2] hover:border-[#087F8C]/40 flex items-center justify-between shadow-xs hover:shadow-sm transition-all duration-200 group text-left cursor-pointer ${dashDensity === 'COMPACT' ? 'p-2.5 sm:p-3 rounded-xl' : dashDensity === 'TOUCHSCREEN' ? 'p-5 sm:p-6 rounded-3xl' : 'p-3.5 sm:p-4 rounded-xl sm:rounded-2xl'}`}
+            >
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className={`${dashDensity === 'COMPACT' ? 'w-8 h-8' : dashDensity === 'TOUCHSCREEN' ? 'w-12 h-12' : 'w-9.5 h-9.5'} rounded-lg bg-[#087F8C]/10 border border-[#087F8C]/20 text-[#087F8C] flex items-center justify-center shrink-0 group-hover:bg-[#087F8C] group-hover:text-white transition-all shadow-2xs`}>
+                  <CalendarDays className={`${dashDensity === 'TOUCHSCREEN' ? 'w-6 h-6' : 'w-5 h-5'}`} />
+                </div>
+                <div className="truncate">
+                  <p className={`font-bold text-[#172B34] group-hover:text-[#087F8C] transition-colors truncate ${dashDensity === 'COMPACT' ? 'text-xs' : dashDensity === 'TOUCHSCREEN' ? 'text-sm sm:text-base font-extrabold' : 'text-xs sm:text-sm'}`}>Appointments</p>
+                  <p className="text-[11px] text-[#567781] font-medium truncate mt-0.5">Book slot</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#567781]/40 group-hover:text-[#087F8C] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+            </button>
+
+            {/* Action 3: Reports & Analytics */}
+            <Link
+              href="/reports"
+              className={`bg-white border border-[#E8EEF2] hover:border-[#087F8C]/40 flex items-center justify-between shadow-xs hover:shadow-sm transition-all duration-200 group text-left ${dashDensity === 'COMPACT' ? 'p-2.5 sm:p-3 rounded-xl' : dashDensity === 'TOUCHSCREEN' ? 'p-5 sm:p-6 rounded-3xl' : 'p-3.5 sm:p-4 rounded-xl sm:rounded-2xl'}`}
+            >
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className={`${dashDensity === 'COMPACT' ? 'w-8 h-8' : dashDensity === 'TOUCHSCREEN' ? 'w-12 h-12' : 'w-9.5 h-9.5'} rounded-lg bg-[#4FA8DB]/10 border border-[#4FA8DB]/20 text-[#4FA8DB] flex items-center justify-center shrink-0 group-hover:bg-[#4FA8DB] group-hover:text-white transition-all shadow-2xs`}>
+                  <BarChart3 className={`${dashDensity === 'TOUCHSCREEN' ? 'w-6 h-6' : 'w-5 h-5'}`} />
+                </div>
+                <div className="truncate">
+                  <p className={`font-bold text-[#172B34] group-hover:text-[#087F8C] transition-colors truncate ${dashDensity === 'COMPACT' ? 'text-xs' : dashDensity === 'TOUCHSCREEN' ? 'text-sm sm:text-base font-extrabold' : 'text-xs sm:text-sm'}`}>Reports</p>
+                  <p className="text-[11px] text-[#567781] font-medium truncate mt-0.5">Clinic analytics</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#567781]/40 group-hover:text-[#087F8C] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+            </Link>
+
+            {/* Action 4: Billing & Invoices */}
+            <Link
+              href="/reports"
+              className={`bg-white border border-[#E8EEF2] hover:border-[#087F8C]/40 flex items-center justify-between shadow-xs hover:shadow-sm transition-all duration-200 group text-left ${dashDensity === 'COMPACT' ? 'p-2.5 sm:p-3 rounded-xl' : dashDensity === 'TOUCHSCREEN' ? 'p-5 sm:p-6 rounded-3xl' : 'p-3.5 sm:p-4 rounded-xl sm:rounded-2xl'}`}
+            >
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className={`${dashDensity === 'COMPACT' ? 'w-8 h-8' : dashDensity === 'TOUCHSCREEN' ? 'w-12 h-12' : 'w-9.5 h-9.5'} rounded-lg bg-[#22A06B]/10 border border-[#22A06B]/20 text-[#22A06B] flex items-center justify-center shrink-0 group-hover:bg-[#22A06B] group-hover:text-white transition-all shadow-2xs`}>
+                  <Receipt className={`${dashDensity === 'TOUCHSCREEN' ? 'w-6 h-6' : 'w-5 h-5'}`} />
+                </div>
+                <div className="truncate">
+                  <p className={`font-bold text-[#172B34] group-hover:text-[#087F8C] transition-colors truncate ${dashDensity === 'COMPACT' ? 'text-xs' : dashDensity === 'TOUCHSCREEN' ? 'text-sm sm:text-base font-extrabold' : 'text-xs sm:text-sm'}`}>Billing & Fees</p>
+                  <p className="text-[11px] text-[#567781] font-medium truncate mt-0.5">Invoices & revenue</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-[#567781]/40 group-hover:text-[#087F8C] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Live Patient Queue & Consultations Board */}
+      {dashShowOpdQueue && (
+        <div className="bg-white border border-[#E8EEF2] rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xs space-y-6">
+        {/* Section Header with Doctor Filter & Sleek Reset Queue Button */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-[#E8EEF2]">
+          <div>
+            <h2 className="text-lg sm:text-xl font-extrabold text-[#172B34] tracking-tight">
+              Patient Queue & Consultations
+            </h2>
+            <p className="text-xs sm:text-sm font-medium text-[#567781] mt-0.5">
+              Live token flow, active chambers, and scheduled patient visits
             </p>
           </div>
 
-          {/* Real-time Metric Badges & Controls */}
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-            {/* Quick Stat Chips */}
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 p-1.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
-              <div className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-slate-450" />
-                <span>In Consult: <strong>{inConsult.length}</strong></span>
-              </div>
-              <div className="px-3 py-1 rounded-xl bg-slate-105 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1.5">
-                <span>Waiting: <strong>{waitingRoom.length}</strong></span>
-              </div>
-              <div className="px-3 py-1 rounded-xl bg-slate-105 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1.5">
-                <span>Upcoming: <strong>{upcoming.length}</strong></span>
-              </div>
-            </div>
-
-            {/* Doctor Filter & Actions */}
+          <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            {/* All Doctors Sorting Dropdown */}
             {user?.role !== 'DOCTOR' && (
-              <div className="min-w-[200px]">
+              <div className="min-w-[150px] sm:min-w-[180px]">
                 <select
                   id="doctorSelect"
-                  className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-slate-350 shadow-2xs"
+                  className="w-full h-9 px-3 bg-[#F6F9FB] border border-[#E8EEF2] rounded-lg text-xs font-semibold text-[#172B34] focus:outline-none focus:border-[#087F8C] shadow-2xs cursor-pointer"
                   value={selectedDoctorId}
                   onChange={(e) => setSelectedDoctorId(e.target.value)}
                 >
-                  <option value="">All Doctors (Clinic Queue)</option>
+                  <option value="">All Doctors</option>
                   {doctors.map(d => (
                     <option key={d.id} value={d.id}>Dr. {d.name}</option>
                   ))}
@@ -1566,506 +1813,471 @@ export default function DashboardPage() {
               </div>
             )}
             
+            {/* Sleek Reset / Clear Queue Button with Hover Explanation Tooltip */}
             {(user?.role === 'DOCTOR' || user?.role === 'ADMIN') && (
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-455 hover:bg-rose-50 dark:hover:bg-rose-955/40 font-bold rounded-xl flex items-center gap-1.5 text-xs shadow-2xs"
-                onClick={() => {
-                  setResetError(null);
-                  setResetPassword('');
-                  setIsResetModalOpen(true);
-                }}
-              >
-                <X className="w-4 h-4 text-rose-500" /> Purge & Reset
-              </Button>
+              <div className="relative group">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-9 border border-[#D64545]/30 text-[#D64545] bg-[#D64545]/5 hover:bg-[#D64545] hover:text-white rounded-lg text-xs font-semibold px-3.5 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                  onClick={() => {
+                    setResetError(null);
+                    setResetPassword('');
+                    setIsResetModalOpen(true);
+                  }}
+                >
+                  <RotateCcw className="w-3.5 h-3.5 group-hover:-rotate-45 transition-transform" />
+                  <span>Reset Queue</span>
+                </Button>
+
+                {/* Explanatory Tooltip on Cursor Hover */}
+                <div className="absolute right-0 top-full mt-2 hidden group-hover:flex flex-col w-64 p-3 bg-[#0B2533] text-white text-[11px] rounded-xl shadow-2xl border border-white/10 z-50 pointer-events-none transition-opacity animate-scaleUp">
+                  <span className="font-bold text-rose-300 flex items-center gap-1.5 mb-1 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                    Why Reset Queue?
+                  </span>
+                  <span className="text-[#E8EEF2]/90 leading-relaxed">
+                    Clears all active tokens in the waiting lounge and archives remaining appointments at the end of the day or shift rollover.
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Tab Stream Filter Bar */}
-        <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-800 pb-1.5 pt-1.5 overflow-x-auto custom-scrollbar">
-          <button
-            onClick={() => setQueueTab('all')}
-            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 flex items-center gap-2 border border-transparent cursor-pointer ${
-              queueTab === 'all'
-                ? 'bg-teal-600 text-white shadow-xs font-extrabold border-teal-550/20'
-                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40'
-            }`}
-          >
-            <span>All Stream Overview</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-              queueTab === 'all'
-                ? 'bg-teal-700/60 text-white'
-                : 'bg-slate-200/60 dark:bg-slate-800/80 text-slate-700 dark:text-slate-350'
-            }`}>
-              {appointments.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setQueueTab('in_consult')}
-            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 flex items-center gap-2 border border-transparent cursor-pointer ${
-              queueTab === 'in_consult'
-                ? 'bg-teal-600 text-white shadow-xs font-extrabold border-teal-550/20'
-                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40'
-            }`}
-          >
-            <span>Active Consultations</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-              queueTab === 'in_consult'
-                ? 'bg-teal-700/60 text-white'
-                : 'bg-slate-200/60 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300'
-            }`}>
-              {inConsult.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setQueueTab('waiting')}
-            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 flex items-center gap-2 border border-transparent cursor-pointer ${
-              queueTab === 'waiting'
-                ? 'bg-teal-600 text-white shadow-xs font-extrabold border-teal-550/20'
-                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40'
-            }`}
-          >
-            <span>Waiting Room Queue</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-              queueTab === 'waiting'
-                ? 'bg-teal-700/60 text-white'
-                : 'bg-slate-200/60 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300'
-            }`}>
-              {waitingRoom.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setQueueTab('upcoming')}
-            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 flex items-center gap-2 border border-transparent cursor-pointer ${
-              queueTab === 'upcoming'
-                ? 'bg-teal-600 text-white shadow-xs font-extrabold border-teal-550/20'
-                : 'text-slate-500 hover:text-slate-905 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40'
-            }`}
-          >
-            <span>Upcoming Today</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-              queueTab === 'upcoming'
-                ? 'bg-teal-700/60 text-white'
-                : 'bg-slate-200/60 dark:bg-slate-800/80 text-slate-700 dark:text-slate-350'
-            }`}>
-              {upcoming.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setQueueTab('completed')}
-            className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 shrink-0 flex items-center gap-2 border border-transparent cursor-pointer ${
-              queueTab === 'completed'
-                ? 'bg-teal-600 text-white shadow-xs font-extrabold border-teal-550/20'
-                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40'
-            }`}
-          >
-            <span>Completed History</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-              queueTab === 'completed'
-                ? 'bg-teal-700/60 text-white'
-                : 'bg-slate-200/60 dark:bg-slate-800/80 text-slate-700 dark:text-slate-350'
-            }`}>
-              {completed.length}
-            </span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
-          {/* Active Waiting Room Queue & In Consult Spotlight */}
-          {(queueTab === 'all' || queueTab === 'in_consult' || queueTab === 'waiting') && (
-            <div className="space-y-5">
-              <div className="flex items-center justify-between pl-1">
-                <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2 tracking-wide uppercase">
-                  <span className="w-2.5 h-2.5 bg-slate-400 rounded-full" />
-                  <span>Waiting Room & Active Consultations</span>
-                </h3>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shadow-2xs font-mono">
-                  {waitingRoom.length + inConsult.length} Patients
-                </span>
+        {/* 2-Column Responsive Workspace Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          {/* Column 1: Active In-Chamber Consultations & Waiting Lounge */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-1">
+              <h3 className="text-xs sm:text-sm font-bold text-[#172B34] flex items-center gap-2 uppercase tracking-wide">
+                <span className="w-2 h-2 rounded-full bg-[#087F8C] animate-pulse" />
+                <span>Waiting Room & Active Consultations</span>
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F6F9FB] text-[#567781] border border-[#E8EEF2]">
+                {waitingRoom.length + inConsult.length} Patients
+              </span>
+            </div>
+            
+            {waitingRoom.length === 0 && inConsult.length === 0 ? (
+              <div className="border border-dashed border-[#E8EEF2] rounded-2xl p-8 text-center bg-[#F6F9FB]/60">
+                <Users2 className="w-8 h-8 mx-auto text-[#567781]/40 mb-2" />
+                <p className="text-sm font-bold text-[#172B34]">Waiting Room Empty</p>
+                <p className="text-xs text-[#567781] font-medium mt-0.5">Receptionists can check-in patients from upcoming schedule.</p>
               </div>
-              
-              {waitingRoom.length === 0 && inConsult.length === 0 ? (
-                <div className="border border-dashed border-slate-205 dark:border-slate-800 rounded-3xl p-10 text-center text-slate-400 dark:text-slate-555 bg-slate-50/40 dark:bg-slate-800/20">
-                  <Users2 className="w-10 h-10 mx-auto text-slate-350 dark:text-slate-700 mb-3" />
-                  <p className="text-base font-extrabold text-slate-800 dark:text-slate-250">Waiting Room Empty</p>
-                  <p className="text-xs text-slate-450 dark:text-slate-500 font-semibold mt-1">Receptionists can check-in patients from the upcoming schedule.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* 1. Spotlight In Consultation cards */}
-                  {(queueTab === 'all' || queueTab === 'in_consult') && inConsult.map(appt => (
-                    <div key={appt.id} className="relative rounded-2xl p-5 border-l-4 border-l-teal-500 border-y border-r border-slate-200/80 dark:border-slate-805 bg-white dark:bg-slate-900 shadow-2xs hover:shadow-xs transition-shadow duration-200">
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div className="space-y-3.5 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[10px] font-black tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/15 shadow-2xs flex items-center gap-1.5">
-                              <span className="relative flex h-1.5 w-1.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                              </span>
-                              <span>LIVE IN CONSULTATION</span>
+            ) : (
+              <div className="space-y-3">
+                {/* 1. Spotlight In Consultation cards */}
+                {inConsult.map(appt => (
+                  <div key={appt.id} className="relative rounded-xl sm:rounded-2xl p-4 sm:p-5 border-l-4 border-l-[#087F8C] border-y border-r border-[#E8EEF2] bg-white shadow-xs hover:border-[#087F8C]/40 transition-all">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div className="space-y-2 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-extrabold tracking-wider text-[#087F8C] bg-[#087F8C]/10 px-2.5 py-0.5 rounded-full border border-[#087F8C]/20 flex items-center gap-1.5">
+                            <span className="relative flex h-1.5 w-1.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#087F8C] opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#087F8C]"></span>
                             </span>
-                            <span className="text-xs font-mono font-bold text-slate-650 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/80 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-2xs">
-                              {appt.startTime.substring(0, 5)} - {appt.endTime.substring(0, 5)}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-3.5 pt-1">
-                            <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-350 font-extrabold flex items-center justify-center text-sm shrink-0 border border-slate-200 dark:border-slate-700">
-                              {appt.patientName.substring(0, 2).toUpperCase()}
-                            </div>
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {user?.role === 'DOCTOR' || user?.role === 'ADMIN' ? (
-                                  <button
-                                    onClick={() => handleOpenPatientFile(appt)}
-                                    className="font-extrabold text-slate-900 dark:text-slate-105 hover:text-slate-700 dark:hover:text-slate-300 hover:underline text-left text-lg leading-tight cursor-pointer"
-                                  >
-                                    {appt.patientName}
-                                  </button>
-                                ) : (
-                                  <Link href={`/patients/${appt.patientId}`} className="font-extrabold text-slate-900 dark:text-slate-105 hover:text-slate-700 dark:hover:text-slate-300 hover:underline text-lg leading-tight">
-                                    {appt.patientName}
-                                  </Link>
-                                )}
-
-                                {appt.type === 'EMERGENCY' && (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-rose-600 text-white text-[10px] font-bold tracking-wider uppercase shadow-xs animate-pulse">
-                                    <AlertCircle className="w-3.5 h-3.5 text-white shrink-0" />
-                                    <span>Emergency</span>
-                                  </span>
-                                )}
-                              </div>
-
-                              <p className="text-xs font-semibold text-slate-450 dark:text-slate-500 flex items-center gap-1.5 mt-0.5">
-                                <Stethoscope className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                                <span>Assigned Practitioner: <strong className="text-teal-600 dark:text-teal-400 font-extrabold">Dr. {appt.doctorName}</strong></span>
-                              </p>
-                            </div>
-                          </div>
-
-                          {appt.reason && (
-                            <div className="text-xs text-slate-600 dark:text-slate-350 bg-slate-50/80 dark:bg-slate-800/80 border border-slate-150 dark:border-slate-800 p-3 rounded-xl italic font-semibold shadow-2xs leading-relaxed">
-                              &ldquo;{appt.reason}&rdquo;
-                            </div>
-                          )}
+                            <span>IN CONSULTATION</span>
+                          </span>
+                          <span className="text-xs font-mono font-bold text-[#567781] bg-[#F6F9FB] px-2 py-0.5 rounded-md border border-[#E8EEF2]">
+                            {appt.startTime.substring(0, 5)} - {appt.endTime.substring(0, 5)}
+                          </span>
                         </div>
 
-                        {(user?.role === 'DOCTOR' || user?.role === 'ADMIN') && (
-                          <div className="flex flex-wrap sm:flex-col gap-2 shrink-0 self-end sm:self-center w-full sm:w-auto">
-                            <Button
-                              size="sm"
-                              className="h-10 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-450 hover:to-emerald-550 text-white rounded-xl font-bold text-xs shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-2 border-0 px-4 cursor-pointer active:scale-98"
-                              onClick={() => handleOpenPatientFile(appt)}
-                            >
-                              <Stethoscope className="w-4 h-4 text-white" />
-                              <span>Open EMR Workspace</span>
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="h-10 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-2 px-4 cursor-pointer active:scale-98"
-                              onClick={() => handleDirectComplete(appt)}
-                            >
-                              <CheckCircle2 className="w-4 h-4 text-slate-500" />
-                              <span>Complete Visit</span>
-                            </Button>
+                        <div className="flex items-center gap-3 pt-0.5">
+                          <div className="w-10 h-10 rounded-xl bg-[#087F8C]/10 text-[#087F8C] font-extrabold flex items-center justify-center text-xs shrink-0 border border-[#087F8C]/20">
+                            {appt.patientName.substring(0, 2).toUpperCase()}
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* 2. Token Waiting Room Cards */}
-                  {(queueTab === 'all' || queueTab === 'waiting') && waitingRoom.map((appt, idx) => {
-                    const isEmergency = appt.type === 'EMERGENCY';
-                    return (
-                      <div
-                        key={appt.id}
-                        className={`rounded-2xl p-4.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border ${
-                          isEmergency
-                            ? 'border-rose-200 dark:border-rose-900/40 bg-rose-500/5 dark:bg-rose-955/15 shadow-2xs'
-                            : 'border-slate-200/60 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 hover:shadow-xs transition-shadow duration-200'
-                        }`}
-                      >
-                        <div className="space-y-2 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {/* Standard Callout Token T-01 */}
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-lg shadow-2xs font-mono border ${
-                              isEmergency
-                                ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/15'
-                                : 'bg-teal-500/10 text-teal-700 dark:text-teal-305 border-teal-500/15'
-                            }`}>
-                              Token T-{String(idx + 1).padStart(2, '0')}
-                            </span>
-
-                            {/* Explicit Booking Type Pill Tag */}
-                            {isEmergency ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/15 text-rose-700 dark:text-rose-350 text-[10px] font-bold tracking-wider uppercase animate-pulse">
-                                <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                                <span>Emergency Priority</span>
-                              </span>
-                            ) : appt.type === 'FOLLOW_UP' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/15 text-amber-700 dark:text-amber-350 text-[10px] font-bold tracking-wider uppercase">
-                                <span>Follow Up</span>
-                              </span>
-                            ) : appt.startTime ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-sky-500/10 border border-sky-500/15 text-sky-700 dark:text-sky-355 text-[10px] font-bold tracking-wider uppercase">
-                                <span>Scheduled</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/15 text-emerald-700 dark:text-emerald-355 text-[10px] font-bold tracking-wider uppercase">
-                                <span>Walk-In</span>
-                              </span>
-                            )}
-
-                            <div className="inline-flex items-center gap-2 flex-wrap pl-1">
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
                               {user?.role === 'DOCTOR' || user?.role === 'ADMIN' ? (
                                 <button
                                   type="button"
                                   onClick={() => handleOpenPatientFile(appt)}
-                                  className={`font-bold hover:underline text-left text-sm truncate cursor-pointer ${
-                                    isEmergency ? 'text-rose-700 dark:text-rose-300 font-extrabold text-[15px]' : 'text-slate-905 dark:text-slate-100 hover:text-teal-650 dark:hover:text-teal-400'
-                                  }`}
+                                  className="font-extrabold text-[#172B34] hover:text-[#087F8C] hover:underline text-left text-base leading-tight cursor-pointer"
                                 >
                                   {appt.patientName}
                                 </button>
                               ) : (
-                                <Link href={`/patients/${appt.patientId}`} className={`font-bold hover:underline text-sm truncate ${
-                                  isEmergency ? 'text-rose-700 dark:text-rose-300 font-extrabold text-[15px]' : 'text-slate-905 dark:text-slate-100 hover:text-teal-650 dark:hover:text-teal-400'
-                                }`}>
+                                <Link href={`/patients/${appt.patientId}`} className="font-extrabold text-[#172B34] hover:text-[#087F8C] hover:underline text-base leading-tight">
                                   {appt.patientName}
                                 </Link>
                               )}
-                            </div>
-                          </div>
 
-                          <div className="flex items-center space-x-3 text-xs font-semibold text-slate-455 dark:text-slate-500 pl-0.5">
-                            <span>Slot: <strong className="text-slate-805 dark:text-slate-205 font-mono">{appt.startTime.substring(0, 5)} - {appt.endTime.substring(0, 5)}</strong></span>
-                            <span>•</span>
-                            <span>Practitioner: Dr. {appt.doctorName}</span>
-                          </div>
-                          {appt.reason && (
-                            <p className={`text-xs p-2.5 rounded-xl italic font-semibold ${
-                              isEmergency
-                                ? 'bg-rose-500/5 text-rose-800 dark:text-rose-350 border border-rose-500/10'
-                                : 'bg-slate-50/80 dark:bg-slate-800/80 text-slate-650 dark:text-slate-350 border border-slate-100 dark:border-slate-800'
-                            }`}>
-                              &ldquo;{appt.reason}&rdquo;
+                              {appt.type === 'EMERGENCY' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#D64545] text-white text-[10px] font-bold tracking-wider uppercase">
+                                  <AlertCircle className="w-3 h-3 text-white shrink-0" />
+                                  <span>Emergency</span>
+                                </span>
+                              )}
+                            </div>
+
+                            <p className="text-xs font-medium text-[#567781] flex items-center gap-1.5">
+                              <Stethoscope className="w-3.5 h-3.5 text-[#567781]" />
+                              <span>Attending: <strong className="text-[#087F8C] font-bold">Dr. {appt.doctorName}</strong></span>
                             </p>
-                          )}
+                          </div>
                         </div>
 
-                        {user?.role === 'DOCTOR' || user?.role === 'ADMIN' ? (
-                          <div className="flex flex-wrap sm:flex-nowrap gap-2 shrink-0 self-end sm:self-center">
-                            <Button
-                              size="sm"
-                              className="h-9.5 rounded-xl font-bold text-xs shadow-md shadow-teal-500/10 transition-all flex items-center gap-1.5 px-3.5 border-0 cursor-pointer active:scale-98 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-450 hover:to-emerald-550 text-white"
-                              onClick={() => handleOpenPatientFile(appt)}
-                            >
-                              <Stethoscope className="w-3.5 h-3.5 text-white" />
-                              <span>Start Consult</span>
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-9.5 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl font-bold text-xs shadow-2xs transition-all flex items-center gap-1.5 px-3 cursor-pointer"
-                              onClick={() => handleDirectComplete(appt)}
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" /> Complete
-                            </Button>
+                        {appt.reason && (
+                          <div className="text-xs text-[#567781] bg-[#F6F9FB] border border-[#E8EEF2] p-2.5 rounded-lg italic font-medium">
+                            &ldquo;{appt.reason}&rdquo;
                           </div>
-                        ) : (
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-xl border bg-slate-100 dark:bg-slate-805 text-slate-650 dark:text-slate-400 border-slate-200 dark:border-slate-700">
-                            {isEmergency ? 'Priority Queue' : 'In Queue'}
+                        )}
+                      </div>
+
+                      {(user?.role === 'DOCTOR' || user?.role === 'ADMIN') && (
+                        <div className="flex flex-wrap sm:flex-col gap-2 shrink-0 self-end sm:self-center w-full sm:w-auto">
+                          <Button
+                            size="sm"
+                            className="h-9 bg-[#087F8C] hover:bg-[#076b77] text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 px-3.5 cursor-pointer"
+                            onClick={() => handleOpenPatientFile(appt)}
+                          >
+                            <Stethoscope className="w-3.5 h-3.5 text-white" />
+                            <span>EMR Pad</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-9 bg-white hover:bg-[#F6F9FB] text-[#172B34] border border-[#E8EEF2] rounded-xl font-semibold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5 px-3 cursor-pointer"
+                            onClick={() => handleDirectComplete(appt)}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-[#22A06B]" />
+                            <span>Finish</span>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* 2. Token Waiting Room Cards */}
+                {waitingRoom.map((appt, idx) => {
+                  const isEmergency = appt.type === 'EMERGENCY';
+                  return (
+                    <div
+                      key={appt.id}
+                      className={`rounded-xl sm:rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border ${
+                        isEmergency
+                          ? 'border-[#D64545]/30 bg-[#D64545]/5 shadow-xs'
+                          : 'border-[#E8EEF2] bg-white hover:border-[#087F8C]/40 hover:shadow-xs transition-all'
+                      }`}
+                    >
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md font-mono border shrink-0 ${
+                            isEmergency
+                              ? 'bg-[#D64545]/10 text-[#D64545] border-[#D64545]/20'
+                              : 'bg-[#087F8C]/10 text-[#087F8C] border-[#087F8C]/20'
+                          }`}>
+                            T-{String(idx + 1).padStart(2, '0')}
+                          </span>
+
+                          {isEmergency ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#D64545]/10 border border-[#D64545]/20 text-[#D64545] text-[10px] font-bold tracking-wider uppercase">
+                              <AlertCircle className="w-3 h-3 text-[#D64545] shrink-0" />
+                              <span>Emergency</span>
+                            </span>
+                          ) : appt.type === 'FOLLOW_UP' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E9A23B]/10 border border-[#E9A23B]/20 text-[#E9A23B] text-[10px] font-bold tracking-wider uppercase">
+                              <span>Follow Up</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#087F8C]/10 border border-[#087F8C]/20 text-[#087F8C] text-[10px] font-bold tracking-wider uppercase">
+                              <span>{appt.startTime ? 'Scheduled' : 'Walk-In'}</span>
+                            </span>
+                          )}
+
+                          <div className="inline-flex items-center gap-2 flex-wrap pl-0.5">
+                            {user?.role === 'DOCTOR' || user?.role === 'ADMIN' ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPatientFile(appt)}
+                                className={`font-bold hover:underline text-left text-sm truncate cursor-pointer ${
+                                  isEmergency ? 'text-[#D64545] font-extrabold' : 'text-[#172B34] hover:text-[#087F8C]'
+                                }`}
+                              >
+                                {appt.patientName}
+                              </button>
+                            ) : (
+                              <Link href={`/patients/${appt.patientId}`} className={`font-bold hover:underline text-sm truncate ${
+                                isEmergency ? 'text-[#D64545] font-extrabold' : 'text-[#172B34] hover:text-[#087F8C]'
+                              }`}>
+                                {appt.patientName}
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2.5 text-xs font-medium text-[#567781]">
+                          <span>Slot: <strong className="text-[#172B34] font-mono">{appt.startTime.substring(0, 5)} - {appt.endTime.substring(0, 5)}</strong></span>
+                          <span>•</span>
+                          <span>Dr. {appt.doctorName}</span>
+                        </div>
+                        {appt.reason && (
+                          <p className={`text-xs p-2 rounded-lg italic font-medium ${
+                            isEmergency
+                              ? 'bg-[#D64545]/5 text-[#D64545] border border-[#D64545]/15'
+                              : 'bg-[#F6F9FB] text-[#567781] border border-[#E8EEF2]'
+                          }`}>
+                            &ldquo;{appt.reason}&rdquo;
+                          </p>
+                        )}
+                      </div>
+
+                      {user?.role === 'DOCTOR' || user?.role === 'ADMIN' ? (
+                        <div className="flex flex-wrap sm:flex-nowrap gap-2 shrink-0 self-end sm:self-center">
+                          <Button
+                            size="sm"
+                            className="h-8.5 rounded-lg font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 px-3 bg-[#087F8C] hover:bg-[#076b77] text-white cursor-pointer"
+                            onClick={() => handleOpenPatientFile(appt)}
+                          >
+                            <Stethoscope className="w-3 h-3 text-white" />
+                            <span>Start Consult</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8.5 border-[#E8EEF2] text-[#172B34] hover:bg-[#F6F9FB] rounded-lg font-medium text-xs shadow-2xs transition-all flex items-center gap-1.5 px-2.5 cursor-pointer"
+                            onClick={() => handleDirectComplete(appt)}
+                          >
+                            <CheckCircle2 className="w-3 h-3 text-[#22A06B]" /> Done
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border bg-[#F6F9FB] text-[#567781] border-[#E8EEF2]">
+                          {isEmergency ? 'Priority' : 'In Queue'}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Column 2: Upcoming Schedule Queue */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-1">
+              <h3 className="text-xs sm:text-sm font-bold text-[#172B34] flex items-center gap-2 uppercase tracking-wide">
+                <span className="w-2 h-2 rounded-full bg-[#4FA8DB]" />
+                <span>Upcoming Appointments Today</span>
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F6F9FB] text-[#567781] border border-[#E8EEF2]">
+                {upcoming.length} Scheduled
+              </span>
+            </div>
+
+            {upcoming.length === 0 ? (
+              <div className="border border-dashed border-[#E8EEF2] rounded-2xl p-8 text-center bg-[#F6F9FB]/60">
+                <CalendarDays className="w-8 h-8 mx-auto text-[#567781]/40 mb-2" />
+                <p className="text-sm font-bold text-[#172B34]">No Upcoming Appointments</p>
+                <p className="text-xs text-[#567781] font-medium mt-0.5">Use Quick Actions to book new appointment slots.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1 custom-scrollbar">
+                {upcoming.map((appt) => (
+                  <div key={appt.id} className="relative border border-[#E8EEF2] bg-white rounded-xl sm:rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xs hover:border-[#087F8C]/40 transition-all group">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#567781] bg-[#F6F9FB] border border-[#E8EEF2] px-2 py-0.5 rounded-md font-sans">
+                          {appt.type || 'Consult'}
+                        </span>
+                        <Link href={`/patients/${appt.patientId}`} className="font-bold text-[#172B34] hover:text-[#087F8C] hover:underline text-sm truncate">
+                          {appt.patientName}
+                        </Link>
+                        {appt.type === 'EMERGENCY' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#D64545]/10 border border-[#D64545]/20 text-[#D64545] text-[10px] font-bold uppercase tracking-wider">
+                            <AlertCircle className="w-3 h-3 text-[#D64545] shrink-0" />
+                            <span>Emergency</span>
                           </span>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Upcoming Schedule Queue */}
-          {(queueTab === 'all' || queueTab === 'upcoming') && (
-            <div className="space-y-5">
-              <div className="flex items-center justify-between pl-1">
-                <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2 tracking-wide uppercase">
-                  <span className="w-2.5 h-2.5 bg-slate-400 rounded-full" />
-                  <span>Upcoming Appointments Today</span>
-                </h3>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shadow-2xs font-mono">
-                  {upcoming.length} Scheduled
-                </span>
-              </div>
-
-              {upcoming.length === 0 ? (
-                <div className="border border-dashed border-slate-205 dark:border-slate-800 rounded-3xl p-10 text-center text-slate-400 dark:text-slate-555 bg-slate-50/40 dark:bg-slate-800/20">
-                  <CalendarDays className="w-10 h-10 mx-auto text-slate-350 dark:text-slate-700 mb-3" />
-                  <p className="text-base font-extrabold text-slate-800 dark:text-slate-250">No Upcoming Appointments</p>
-                  <p className="text-xs text-slate-455 dark:text-slate-500 font-semibold mt-1">Click &ldquo;Book Slot&rdquo; in upper banner to schedule an appointment.</p>
-                </div>
-              ) : (
-                <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1 custom-scrollbar">
-                  {upcoming.map((appt) => (
-                    <div key={appt.id} className="relative border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/90 rounded-2xl p-4.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-2xs group">
-                      <div className="space-y-1.5 min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-650 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-0.5 rounded-lg font-sans">
-                            {appt.type || 'Consult'}
-                          </span>
-                          <Link href={`/patients/${appt.patientId}`} className="font-extrabold text-slate-900 dark:text-slate-100 hover:text-slate-700 dark:hover:text-slate-300 hover:underline text-sm truncate">
-                            {appt.patientName}
-                          </Link>
-                          {appt.type === 'EMERGENCY' && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-rose-500/5 border border-rose-500/10 text-rose-700 dark:text-rose-350 text-[10px] font-bold uppercase tracking-wider">
-                              <AlertCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-450 shrink-0" />
-                              <span>Emergency Booked</span>
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs font-semibold text-slate-455 dark:text-slate-500 pl-0.5">
-                          Slot: <strong className="text-slate-800 dark:text-slate-200 font-mono">{appt.startTime.substring(0, 5)} - {appt.endTime.substring(0, 5)}</strong>
-                        </p>
-                        <p className="text-xs font-semibold text-slate-450 dark:text-slate-550 pl-0.5">
-                          Attending: Dr. {appt.doctorName}
-                        </p>
-                      </div>
-                      
-                      {/* Standard Check-In Action */}
-                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center w-full sm:w-auto">
-                        <Button
-                          size="sm"
-                          className="h-9.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-805 dark:text-slate-205 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs shadow-2xs transition-colors duration-200 flex items-center justify-center gap-1.5 px-3.5 w-full sm:w-auto cursor-pointer"
-                          onClick={() => handleCheckIn(appt.id)}
-                        >
-                          <span>Check In Patient</span>
-                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                        </Button>
-                      </div>
+                      <p className="text-xs font-medium text-[#567781]">
+                        Slot: <strong className="text-[#172B34] font-mono">{appt.startTime.substring(0, 5)} - {appt.endTime.substring(0, 5)}</strong> • Dr. {appt.doctorName}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    
+                    {/* Check-In Action Button */}
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center w-full sm:w-auto">
+                      <Button
+                        size="sm"
+                        className="h-8.5 bg-[#F6F9FB] hover:bg-[#087F8C] text-[#172B34] hover:text-white border border-[#E8EEF2] hover:border-[#087F8C] rounded-lg font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1 px-3 w-full sm:w-auto cursor-pointer"
+                        onClick={() => handleCheckIn(appt.id)}
+                      >
+                        <span>Check In</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Completed list */}
-        {(queueTab === 'all' || queueTab === 'completed') && completed.length > 0 && (
-          <div className="pt-6 border-t border-slate-200/60 dark:border-slate-800 space-y-4">
+        {completed.length > 0 && (
+          <div className="pt-6 border-t border-[#E8EEF2] space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2 tracking-wide uppercase pl-1">
-                <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse" />
+              <h3 className="text-xs sm:text-sm font-bold text-[#172B34] flex items-center gap-2 uppercase tracking-wide">
+                <span className="w-2 h-2 bg-[#22A06B] rounded-full" />
                 <span>Completed Consultations Today</span>
               </h3>
 
               <div className="flex flex-wrap items-center gap-3">
                 {/* Ascending / Descending Token Filter Button */}
-                <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700/80 shadow-2xs">
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2 flex items-center gap-1">
-                    <ArrowUpDown className="w-3.5 h-3.5 text-teal-650" />
-                    <span>Sort Token:</span>
+                <div className="flex items-center gap-1 bg-[#F6F9FB] p-1 rounded-lg border border-[#E8EEF2] shadow-2xs">
+                  <span className="text-[10px] font-bold text-[#567781] uppercase tracking-wider px-1.5 flex items-center gap-1">
+                    <ArrowUpDown className="w-3 h-3 text-[#087F8C]" />
+                    <span>Sort:</span>
                   </span>
                   <button
                     type="button"
                     onClick={() => setCompletedSortOrder('asc')}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
                       completedSortOrder === 'asc'
-                        ? 'bg-teal-600 text-white shadow-2xs font-extrabold'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                        ? 'bg-[#087F8C] text-white shadow-2xs'
+                        : 'text-[#567781] hover:text-[#172B34]'
                     }`}
                     title="Sort Token Ascending (T-01 → T-N)"
                   >
                     <ArrowUp className="w-3 h-3" />
-                    <span>Ascending</span>
+                    <span>Asc</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setCompletedSortOrder('desc')}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
                       completedSortOrder === 'desc'
-                        ? 'bg-teal-600 text-white shadow-2xs font-extrabold'
-                        : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                        ? 'bg-[#087F8C] text-white shadow-2xs'
+                        : 'text-[#567781] hover:text-[#172B34]'
                     }`}
                     title="Sort Token Descending (T-N → T-01)"
                   >
                     <ArrowDown className="w-3 h-3" />
-                    <span>Descending</span>
+                    <span>Desc</span>
                   </button>
                 </div>
 
-                <span className="text-[10px] font-black uppercase text-emerald-705 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/15 shadow-2xs font-mono">
-                  {completed.length} Done
+                <span className="text-[10px] font-bold uppercase text-[#22A06B] bg-[#22A06B]/10 px-2.5 py-1 rounded-full border border-[#22A06B]/20 font-mono">
+                  {completed.length} Finished
                 </span>
               </div>
             </div>
-            
-            <div className="overflow-hidden border border-slate-205/60 dark:border-slate-800 rounded-2xl shadow-2xs">
-              <table className="w-full text-left border-collapse text-xs">
+
+            {/* 1. Mobile Cards Layout (md:hidden) */}
+            <div className="md:hidden space-y-2.5">
+              {sortedCompleted.map(appt => {
+                const tokenNum = appointmentTokenMap.get(appt.id) || 'T-01';
+                const isEmergency = appt.type === 'EMERGENCY';
+                return (
+                  <div key={appt.id} className="bg-[#F6F9FB]/60 border border-[#E8EEF2] rounded-xl p-3.5 space-y-2 shadow-2xs">
+                    {/* Header Row: Token + Type Tag + Time Slot */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="px-2 py-0.5 rounded-md bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20 text-[11px] font-extrabold font-mono shrink-0">
+                          {tokenNum}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold border shrink-0 ${
+                          isEmergency
+                            ? 'bg-[#D64545]/10 text-[#D64545] border-[#D64545]/20'
+                            : appt.type === 'FOLLOW_UP'
+                            ? 'bg-[#E9A23B]/10 text-[#E9A23B] border-[#E9A23B]/20'
+                            : 'bg-[#087F8C]/10 text-[#087F8C] border-[#087F8C]/20'
+                        }`}>
+                          {appt.type || 'Consult'}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-[#567781] shrink-0">
+                        {appt.startTime.substring(0, 5)} - {appt.endTime.substring(0, 5)}
+                      </span>
+                    </div>
+
+                    {/* Patient & Doctor Info + EMR Action */}
+                    <div className="flex items-center justify-between gap-3 pt-0.5">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-[#172B34] text-sm truncate">{appt.patientName}</h4>
+                        <p className="text-[11px] text-[#567781] font-medium truncate">Dr. {appt.doctorName}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="shrink-0 text-xs font-bold text-[#087F8C] bg-[#087F8C]/10 hover:bg-[#087F8C] hover:text-white px-2.5 py-1.5 rounded-lg border border-[#087F8C]/20 flex items-center gap-1 transition-all cursor-pointer"
+                        onClick={() => handleOpenPatientFile(appt)}
+                      >
+                        <History className="w-3.5 h-3.5" />
+                        <span>EMR</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 2. Desktop Table Layout (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto border border-[#E8EEF2] rounded-xl sm:rounded-2xl shadow-2xs custom-scrollbar">
+              <table className="w-full text-left border-collapse text-xs min-w-[680px]">
                 <thead>
-                  <tr className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/60 dark:border-slate-800 text-slate-400 dark:text-slate-550 font-extrabold uppercase tracking-wider text-[10px]">
-                    <th className="py-3.5 px-4 font-black">Token #</th>
-                    <th className="py-3.5 px-4 font-black">Patient Name</th>
-                    <th className="py-3.5 px-4 font-black">Timing Slot</th>
-                    <th className="py-3.5 px-4 font-black">Visit Type</th>
-                    <th className="py-3.5 px-4 font-black">Doctor</th>
-                    <th className="py-3.5 px-4 font-black">Diagnosis</th>
-                    <th className="py-3.5 px-4 text-right font-black">Action</th>
+                  <tr className="bg-[#F6F9FB] border-b border-[#E8EEF2] text-[#567781] font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4 font-bold">Token</th>
+                    <th className="py-3 px-4 font-bold">Patient Name</th>
+                    <th className="py-3 px-4 font-bold">Timing Slot</th>
+                    <th className="py-3 px-4 font-bold">Visit Type</th>
+                    <th className="py-3 px-4 font-bold">Doctor</th>
+                    <th className="py-3 px-4 font-bold">Diagnosis</th>
+                    <th className="py-3 px-4 text-right font-bold">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-slate-900">
+                <tbody className="divide-y divide-[#E8EEF2] bg-white">
                   {sortedCompleted.map(appt => {
                     const tokenNum = appointmentTokenMap.get(appt.id) || 'T-01';
                     return (
-                      <tr key={appt.id} className="hover:bg-slate-50/40 dark:hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4 font-mono font-black">
-                          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-707 dark:text-emerald-300 border border-emerald-500/15 text-[10px] font-bold shadow-2xs font-mono">
-                            Token {tokenNum}
+                      <tr key={appt.id} className="hover:bg-[#F6F9FB]/80 transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold">
+                          <span className="px-2 py-0.5 rounded-md bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20 text-[10px] font-bold shadow-2xs font-mono">
+                            {tokenNum}
                           </span>
                         </td>
-                        <td className="py-3 px-4 font-extrabold text-slate-900 dark:text-slate-100">
+                        <td className="py-3 px-4 font-bold text-[#172B34]">
                           {user?.role === 'DOCTOR' || user?.role === 'ADMIN' ? (
                             <button
                               type="button"
                               onClick={() => handleOpenPatientFile(appt)}
-                              className="font-extrabold text-slate-905 dark:text-slate-100 hover:text-teal-650 dark:hover:text-teal-400 hover:underline text-left cursor-pointer"
+                              className="font-bold text-[#172B34] hover:text-[#087F8C] hover:underline text-left cursor-pointer"
                             >
                               {appt.patientName}
                             </button>
                           ) : (
-                            <Link href={`/patients/${appt.patientId}`} className="font-extrabold text-slate-905 dark:text-slate-101 hover:text-teal-650 dark:hover:text-teal-400 hover:underline">
+                            <Link href={`/patients/${appt.patientId}`} className="font-bold text-[#172B34] hover:text-[#087F8C] hover:underline">
                               {appt.patientName}
                             </Link>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-slate-500 dark:text-slate-450 font-mono font-bold">
+                        <td className="py-3 px-4 text-[#567781] font-mono font-semibold">
                           {appt.startTime.substring(0, 5)} - {appt.endTime.substring(0, 5)}
                         </td>
-                        <td className="py-3 px-4 font-extrabold">
-                          <span className={`px-2 py-0.5 rounded-lg text-[10px] uppercase font-bold border ${
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold border ${
                             appt.type === 'EMERGENCY'
-                              ? 'bg-rose-500/10 text-rose-700 dark:text-rose-350 border-rose-500/15'
+                              ? 'bg-[#D64545]/10 text-[#D64545] border-[#D64545]/20'
                               : appt.type === 'FOLLOW_UP'
-                              ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/15'
-                              : 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/15'
+                              ? 'bg-[#E9A23B]/10 text-[#E9A23B] border-[#E9A23B]/20'
+                              : 'bg-[#087F8C]/10 text-[#087F8C] border-[#087F8C]/20'
                           }`}>
                             {appt.type || 'Consult'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-550 dark:text-slate-450 font-semibold">
+                        <td className="py-3 px-4 text-[#567781] font-medium">
                           Dr. {appt.doctorName}
                         </td>
-                        <td className="py-3 px-4 text-slate-650 dark:text-slate-400 font-semibold max-w-[200px] truncate" title={appt.diagnosis || ''}>
-                          {appt.diagnosis || <span className="text-slate-400 dark:text-slate-555 italic font-medium">None Recorded</span>}
+                        <td className="py-3 px-4 text-[#567781] font-medium max-w-[200px] truncate" title={appt.diagnosis || ''}>
+                          {appt.diagnosis || <span className="text-[#567781]/50 italic">None Recorded</span>}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <button
                             type="button"
-                            className="text-teal-605 dark:text-teal-400 hover:text-teal-750 dark:hover:text-teal-300 font-bold text-[11px] hover:underline flex items-center gap-1.5 ml-auto cursor-pointer"
+                            className="text-[#087F8C] hover:text-[#076b77] font-bold text-xs hover:underline flex items-center gap-1.5 ml-auto cursor-pointer"
                             onClick={() => handleOpenPatientFile(appt)}
                           >
                             <History className="w-3.5 h-3.5" /> EMR File
@@ -2080,6 +2292,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      )}
+      </>
+      )}
 
       {/* 6. Reset Verification Modal */}
       {isResetModalOpen && (
@@ -2194,7 +2409,7 @@ export default function DashboardPage() {
             {/* STICKY Top Modal Controls Header */}
             <div className="sticky top-0 z-30 bg-slate-950 text-white px-6 py-4 flex justify-between items-center print:hidden border-b border-slate-800 shadow-md">
               <div className="flex items-center space-x-3">
-                <div className="bg-sky-500/20 p-2 rounded-xl border border-sky-500/30 text-sky-400">
+                <div className="bg-teal-600/20 p-2 rounded-xl border border-teal-600/30 text-teal-400">
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
@@ -2206,7 +2421,7 @@ export default function DashboardPage() {
               <div className="flex items-center space-x-3">
                 <Button
                   onClick={() => window.print()}
-                  className="bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-xs h-10 px-5 rounded-xl flex items-center space-x-2 shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="bg-gradient-to-r from-teal-600 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-extrabold text-xs h-10 px-5 rounded-xl flex items-center space-x-2 shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print Official Letterhead</span>
@@ -2228,7 +2443,7 @@ export default function DashboardPage() {
               <div className="p-8 sm:p-10 space-y-6 text-slate-800 bg-white border border-slate-200 rounded-3xl shadow-xl print:shadow-none print:border-none print:p-0 print:rounded-none max-w-4xl mx-auto" id="printable-rx">
                 
                 {/* Top Accent Line for Official Stationery Look */}
-                <div className="h-2 w-full bg-gradient-to-r from-blue-900 via-sky-600 to-indigo-800 rounded-t-full print:rounded-none -mt-2 mb-4" />
+                <div className="h-2 w-full bg-gradient-to-r from-teal-900 via-teal-600 to-teal-800 rounded-t-full print:rounded-none -mt-2 mb-4" />
 
                 {/* 1. Header: Clinic Branding & Attending Doctor Credentials */}
                 <div className="border-b-2 border-slate-900 pb-5 flex flex-col sm:flex-row justify-between items-start gap-6">
@@ -2242,7 +2457,7 @@ export default function DashboardPage() {
                         className="w-16 h-16 object-contain rounded-2xl border border-slate-200 p-1 shrink-0 bg-white shadow-xs"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-900 via-sky-700 to-indigo-800 text-white flex items-center justify-center shadow-md shrink-0 border border-white/20">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-teal-900 via-teal-700 to-teal-800 text-white flex items-center justify-center shadow-md shrink-0 border border-white/20">
                         <Hospital className="w-9 h-9" />
                       </div>
                     )}
@@ -2251,7 +2466,7 @@ export default function DashboardPage() {
                       <h1 className="text-2xl font-black text-slate-900 tracking-tight uppercase leading-tight font-serif">
                         {clinic?.name || user?.clinicName || 'Nisschay Medical Centre'}
                       </h1>
-                      <p className="text-xs font-bold text-sky-700 uppercase tracking-wider">
+                      <p className="text-xs font-bold text-teal-700 uppercase tracking-wider">
                         Multi-Specialty OPD Healthcare & Clinical EMR Services
                       </p>
                       <p className="text-[11px] text-slate-600 font-medium leading-relaxed max-w-md">
@@ -2280,7 +2495,7 @@ export default function DashboardPage() {
                           <h2 className="font-extrabold text-slate-900 text-base leading-tight">
                             Dr. {selectedPrintAppt.doctorName}
                           </h2>
-                          <p className="text-xs text-sky-700 font-extrabold">
+                          <p className="text-xs text-teal-700 font-extrabold">
                             {docProfile?.qualification || 'MBBS, MD (General Medicine)'}
                           </p>
                           <p className="text-[11px] text-slate-600 font-semibold">
@@ -2314,7 +2529,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[9.5px] uppercase font-extrabold tracking-wider">Consultant Doctor</span>
-                      <strong className="text-sky-700 font-extrabold">Dr. {selectedPrintAppt.doctorName}</strong>
+                      <strong className="text-teal-700 font-extrabold">Dr. {selectedPrintAppt.doctorName}</strong>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[9.5px] uppercase font-extrabold tracking-wider">EMR File ID</span>
@@ -2355,7 +2570,7 @@ export default function DashboardPage() {
                   {selectedPrintAppt.symptoms && (
                     <div className="space-y-1.5 text-xs">
                       <span className="text-slate-500 font-extrabold uppercase text-[10px] tracking-wider flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-600" />
                         <span>Chief Complaints / Symptoms</span>
                       </span>
                       <div className="bg-slate-50/60 border border-slate-200 p-3 rounded-xl text-slate-800 font-medium whitespace-pre-line leading-relaxed min-h-[50px]">
@@ -2366,8 +2581,8 @@ export default function DashboardPage() {
 
                   {selectedPrintAppt.diagnosis && (
                     <div className="space-y-1.5 text-xs">
-                      <span className="text-sky-800 font-extrabold uppercase text-[10px] tracking-wider flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-sky-600" />
+                      <span className="text-teal-800 font-extrabold uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-600" />
                         <span>Clinical Diagnosis & Findings</span>
                       </span>
                       <div className="bg-sky-50/60 border border-sky-200/80 p-3 rounded-xl text-slate-900 font-bold leading-relaxed min-h-[50px]">
@@ -2380,7 +2595,7 @@ export default function DashboardPage() {
                 {/* 4. Prescribed Medications (Rx) Section */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between border-b-2 border-slate-900 pb-1.5">
-                    <div className="flex items-center space-x-2 text-sky-700">
+                    <div className="flex items-center space-x-2 text-teal-700">
                       <span className="text-3xl font-black font-serif italic tracking-tight">Rx</span>
                       <span className="text-xs font-black uppercase tracking-wider text-slate-700">Prescribed Medications</span>
                     </div>
@@ -2403,7 +2618,7 @@ export default function DashboardPage() {
                           <tr key={idx} className="hover:bg-slate-50/50">
                             <td className="py-3 px-3 text-center font-bold text-slate-400 font-sans">{idx + 1}</td>
                             <td className="py-3 px-4 font-bold text-slate-900 font-sans">{item.name}</td>
-                            <td className="py-3 px-4 text-sky-900 font-semibold">{item.dosage || 'As Directed'}</td>
+                            <td className="py-3 px-4 text-teal-900 font-semibold">{item.dosage || 'As Directed'}</td>
                             <td className="py-3 px-4 font-semibold text-slate-700">{item.duration || '—'}</td>
                           </tr>
                         ))}
@@ -2432,11 +2647,11 @@ export default function DashboardPage() {
                   </div>
                 )}
                 {/* Official Bold Next Follow-Up Appointment Line */}
-                <div className="bg-sky-50/80 border-2 border-sky-600 rounded-2xl p-3.5 text-center my-3 print:bg-white print:border-slate-900 print:rounded-none">
+                <div className="bg-sky-50/80 border-2 border-teal-600 rounded-2xl p-3.5 text-center my-3 print:bg-white print:border-slate-900 print:rounded-none">
                   <p className="text-xs font-black text-slate-900 uppercase tracking-wide flex items-center justify-center gap-2">
-                    <Calendar className="w-4 h-4 text-sky-600 shrink-0 print:hidden" />
+                    <Calendar className="w-4 h-4 text-teal-600 shrink-0 print:hidden" />
                     <span>NEXT APPOINTMENT / FOLLOW-UP DATE:</span>
-                    <strong className="text-sm font-extrabold text-blue-900 underline font-mono print:text-black">
+                    <strong className="text-sm font-extrabold text-teal-900 underline font-mono print:text-black">
                       {selectedPrintAppt.followUpDate || 'As Advised / Review as Needed'}
                     </strong>
                   </p>
@@ -2455,11 +2670,11 @@ export default function DashboardPage() {
                     <div className="space-y-2 pt-2 border-t border-slate-200 print:hidden">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                          <IndianRupee className="w-4 h-4 text-emerald-600" />
+                          <IndianRupee className="w-4 h-4 text-teal-600" />
                           <span>Billing & Payment Summary</span>
                         </span>
-                        <span className="bg-emerald-100 text-emerald-800 font-black text-[10px] px-2.5 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span className="bg-sky-100 text-teal-800 font-black text-[10px] px-2.5 py-0.5 rounded-full border border-sky-200 uppercase tracking-wider flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-teal-600" />
                           <span>PAID (Receipt #{selectedPrintAppt.id.slice(0, 6).toUpperCase()})</span>
                         </span>
                       </div>
@@ -2479,7 +2694,7 @@ export default function DashboardPage() {
 
                         <div className="flex justify-between items-center border-t-2 border-slate-300 pt-2 text-slate-900 font-black text-sm">
                           <span>Total Amount Paid</span>
-                          <span className="font-mono text-emerald-700">₹{totalBill}</span>
+                          <span className="font-mono text-teal-700">₹{totalBill}</span>
                         </div>
                       </div>
                     </div>
@@ -2522,7 +2737,7 @@ export default function DashboardPage() {
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden border border-slate-200 space-y-4 p-6">
             <div className="flex justify-between items-start border-b border-slate-100 pb-3">
               <div>
-                <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded border border-sky-100">
+                <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider bg-sky-50 px-2 py-0.5 rounded border border-sky-100">
                   Configure Dosage & Timing
                 </span>
                 <h3 className="text-base font-black text-slate-800 mt-1">{timingModalMed.name}</h3>
@@ -2546,7 +2761,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => setUseCustomTiming(false)}
                   className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                    !useCustomTiming ? 'bg-white text-sky-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'
+                    !useCustomTiming ? 'bg-white text-teal-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   Quick Preset Timing
@@ -2555,7 +2770,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => setUseCustomTiming(true)}
                   className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                    useCustomTiming ? 'bg-white text-sky-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'
+                    useCustomTiming ? 'bg-white text-teal-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   Manual Doctor Timing
@@ -2582,7 +2797,7 @@ export default function DashboardPage() {
                           onClick={() => setTimingFrequency(freq.value)}
                           className={`p-2 rounded-xl text-xs font-bold border transition-all text-center ${
                             timingFrequency === freq.value
-                              ? 'bg-sky-50 border-sky-500 text-sky-800 ring-2 ring-sky-500/20'
+                              ? 'bg-sky-50 border-teal-600 text-teal-800 ring-2 ring-teal-600/20'
                               : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
@@ -2603,7 +2818,7 @@ export default function DashboardPage() {
                           onClick={() => setTimingFood(food)}
                           className={`p-2 rounded-xl text-xs font-bold border transition-all text-center ${
                             timingFood === food
-                              ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/20'
+                              ? 'bg-sky-50 border-teal-600 text-teal-800 ring-2 ring-teal-600/20'
                               : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
@@ -2624,7 +2839,7 @@ export default function DashboardPage() {
                           onClick={() => setTimingDuration(dur)}
                           className={`p-1.5 rounded-xl text-[11px] font-bold border transition-all text-center ${
                             timingDuration === dur
-                              ? 'bg-indigo-50 border-indigo-500 text-indigo-800 ring-2 ring-indigo-500/20'
+                              ? 'bg-sky-50 border-teal-600 text-teal-800 ring-2 ring-teal-600/20'
                               : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
@@ -2643,7 +2858,7 @@ export default function DashboardPage() {
                   <input
                     type="text"
                     placeholder="e.g. Take 1 tab at 8 AM and 1 tab at 8 PM for 5 days after food"
-                    className="w-full h-11 px-3 bg-white border border-slate-250 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    className="w-full h-11 px-3 bg-white border border-slate-250 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-600"
                     value={customTimingInput}
                     onChange={(e) => setCustomTimingInput(e.target.value)}
                   />
@@ -2666,7 +2881,7 @@ export default function DashboardPage() {
               <Button
                 type="button"
                 onClick={handleConfirmAddMedicineWithTiming}
-                className="bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold h-10 px-5 text-xs shadow-md"
+                className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold h-10 px-5 text-xs shadow-md"
               >
                 Add to Prescription
               </Button>
@@ -2680,7 +2895,7 @@ export default function DashboardPage() {
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 space-y-4 relative animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-900/60 flex items-center justify-center text-teal-600 dark:text-teal-400">
+                <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-teal-950/60 border border-sky-200 dark:border-teal-900/60 flex items-center justify-center text-teal-600 dark:text-teal-400">
                   <User className="w-5 h-5" />
                 </div>
                 <div>
@@ -2710,7 +2925,7 @@ export default function DashboardPage() {
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-6 space-y-5 relative animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-900/60 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-teal-950/60 border border-sky-200 dark:border-teal-900/60 flex items-center justify-center text-teal-600 dark:text-teal-400">
                   <CalendarDays className="w-5 h-5" />
                 </div>
                 <div>
@@ -2741,9 +2956,9 @@ export default function DashboardPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Select Patient *</label>
                 {selectedBookPatient ? (
-                  <div className="flex items-center justify-between p-3 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900/60">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-sky-50 dark:bg-teal-950/40 border border-sky-200 dark:border-teal-900/60">
                     <div>
-                      <p className="text-sm font-extrabold text-teal-950 dark:text-teal-100">{selectedBookPatient.name}</p>
+                      <p className="text-sm font-extrabold text-teal-950 dark:text-sky-100">{selectedBookPatient.name}</p>
                       <p className="text-xs font-medium text-teal-700 dark:text-teal-300">Phone: {selectedBookPatient.phone} • DOB: {selectedBookPatient.dateOfBirth || 'N/A'}</p>
                     </div>
                     <Button
@@ -2767,7 +2982,7 @@ export default function DashboardPage() {
                       value={bookPatientSearch}
                       onChange={(e) => setBookPatientSearch(e.target.value)}
                       placeholder="Type patient name or mobile number..."
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-600"
                     />
 
                     {/* Patient Dropdown Search Results */}
@@ -2785,7 +3000,7 @@ export default function DashboardPage() {
                               key={p.id}
                               type="button"
                               onClick={() => setSelectedBookPatient(p)}
-                              className="w-full text-left p-2.5 rounded-xl hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors flex items-center justify-between"
+                              className="w-full text-left p-2.5 rounded-xl hover:bg-sky-50 dark:hover:bg-teal-950/40 transition-colors flex items-center justify-between"
                             >
                               <div>
                                 <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{p.name}</p>
@@ -2820,7 +3035,7 @@ export default function DashboardPage() {
                     className={`w-full h-10 px-3 bg-slate-50 dark:bg-slate-850 border ${
                       !bookDoctorId && doctors.length > 1
                         ? 'border-amber-400 dark:border-amber-600 focus:ring-amber-500'
-                        : 'border-slate-200 dark:border-slate-700 focus:ring-teal-500'
+                        : 'border-slate-200 dark:border-slate-700 focus:ring-teal-600'
                     } rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2`}
                   >
                     <option value="">-- Choose Attending Doctor --</option>
@@ -2850,7 +3065,7 @@ export default function DashboardPage() {
                         bookType === t.id
                           ? t.id === 'EMERGENCY'
                             ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
-                            : 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                            : 'bg-teal-600 text-white border-teal-600 shadow-xs'
                           : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                       }`}
                     >
@@ -2867,7 +3082,7 @@ export default function DashboardPage() {
                   type="date"
                   value={bookDate || getTodayString()}
                   onChange={(e) => setBookDate(e.target.value)}
-                  className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-600"
                 />
               </div>
 
@@ -2877,13 +3092,13 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setIsTimeSlotSheetOpen(true)}
-                  className="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-sky-950/40 border border-slate-200 dark:border-slate-700 hover:border-sky-300 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center justify-between transition-all cursor-pointer shadow-2xs group"
+                  className="w-full h-11 px-4 bg-slate-50 dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-teal-950/40 border border-slate-200 dark:border-slate-700 hover:border-teal-300 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center justify-between transition-all cursor-pointer shadow-2xs group"
                 >
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform" />
-                    <span>Slot Time: <strong className="font-mono text-sm text-sky-700 dark:text-sky-300 ml-1">{bookStartTime}</strong></span>
+                    <Clock className="w-4 h-4 text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform" />
+                    <span>Slot Time: <strong className="font-mono text-sm text-teal-700 dark:text-teal-300 ml-1">{bookStartTime}</strong></span>
                   </div>
-                  <span className="text-[11px] font-extrabold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-900/60 px-3 py-1 rounded-lg border border-sky-200 dark:border-sky-800 shadow-2xs">
+                  <span className="text-[11px] font-extrabold text-teal-700 dark:text-teal-300 bg-sky-100 dark:bg-teal-900/60 px-3 py-1 rounded-lg border border-sky-200 dark:border-teal-800 shadow-2xs">
                     Open Time Sheet ➔
                   </span>
                 </button>
@@ -2891,13 +3106,13 @@ export default function DashboardPage() {
 
               {/* Reason / Notes */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Chief Complaint / Reason (Optional)</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Chief Complaints / Reason (Optional)</label>
                 <input
                   type="text"
                   placeholder="e.g. High Fever & Headache since 2 days"
                   value={bookReason}
                   onChange={(e) => setBookReason(e.target.value)}
-                  className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-600"
                 />
               </div>
 
@@ -2916,7 +3131,7 @@ export default function DashboardPage() {
                 <Button
                   type="submit"
                   disabled={submittingBookAppt}
-                  className="bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold h-10 px-6 text-xs shadow-md"
+                  className="bg-teal-600 hover:bg-teal-600 text-white rounded-xl font-bold h-10 px-6 text-xs shadow-md"
                 >
                   {submittingBookAppt ? 'Booking Slot...' : 'Confirm Book Slot'}
                 </Button>
@@ -2932,7 +3147,7 @@ export default function DashboardPage() {
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md p-6 space-y-4 relative animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-900/60 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-teal-950/60 border border-sky-200 dark:border-teal-900/60 flex items-center justify-center text-teal-600 dark:text-teal-400">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
@@ -2958,6 +3173,12 @@ export default function DashboardPage() {
                   const doc = doctors.find((d) => d.id === (bookDoctorId || selectedDoctorId));
                   return doc?.slotDuration || 15;
                 })()}
+                morningStartTime={clinic?.morningStartTime}
+                morningEndTime={clinic?.morningEndTime}
+                eveningStartTime={clinic?.eveningStartTime}
+                eveningEndTime={clinic?.eveningEndTime}
+                isClosedToday={isQuickBookClosed}
+                closedReason={quickBookClosedReason}
                 onSelectSlot={(start24, end24) => {
                   setBookStartTime(start24);
                   setIsTimeSlotSheetOpen(false);
@@ -2966,7 +3187,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-mono font-bold text-sky-700 dark:text-sky-300">
+              <span className="text-xs font-mono font-bold text-teal-700 dark:text-teal-300">
                 Selected Slot: {bookStartTime}
               </span>
               <Button
@@ -2989,7 +3210,7 @@ export default function DashboardPage() {
           <div className="relative bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 z-10 space-y-5 animate-scaleUp">
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-2xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-800 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-2xl bg-sky-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 border border-sky-200 dark:border-teal-800 flex items-center justify-center">
                   <SlidersHorizontal className="w-5 h-5" />
                 </div>
                 <div>
@@ -3029,7 +3250,7 @@ export default function DashboardPage() {
                         type="checkbox"
                         checked={isVisible}
                         onChange={() => toggleVisibleCard(cardId)}
-                        className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 border-slate-300 dark:border-slate-700"
+                        className="w-4 h-4 rounded text-teal-600 focus:ring-teal-600 border-slate-300 dark:border-slate-700"
                       />
                       <div className="truncate">
                         <span className="text-xs font-extrabold text-slate-900 dark:text-white block truncate">{index + 1}. {cardMeta.name}</span>

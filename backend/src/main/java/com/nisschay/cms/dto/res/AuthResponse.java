@@ -22,4 +22,5 @@ public class AuthResponse {
     private String role;
     private UUID clinicId;
     private String clinicName;
+    private String profilePictureUrl;
 }

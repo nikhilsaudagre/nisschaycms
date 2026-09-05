@@ -27,11 +27,11 @@ public class ReportController {
 
     private final ReportService reportService;
 
-    @GetMapping("/summary")
+    @GetMapping({"", "/summary", "/dashboard"})
     public ResponseEntity<ReportSummaryResponse> getSummary(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) UUID doctorId
     ) {
         if (userDetails == null) {
@@ -46,7 +46,10 @@ public class ReportController {
             effectiveDoctorId = userDetails.getId();
         }
 
-        ReportSummaryResponse summary = reportService.getSummary(clinicId, startDate, endDate, effectiveDoctorId);
+        LocalDate start = (startDate != null) ? startDate : LocalDate.now().withDayOfMonth(1);
+        LocalDate end = (endDate != null) ? endDate : LocalDate.now();
+
+        ReportSummaryResponse summary = reportService.getSummary(clinicId, start, end, effectiveDoctorId);
         return ResponseEntity.ok(summary);
     }
 
@@ -107,15 +110,27 @@ public class ReportController {
     @GetMapping("/export-csv")
     public ResponseEntity<byte[]> exportCsv(
             @AuthenticationPrincipal UserDetailsImpl userDetails,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) UUID doctorId,
+            @RequestParam(required = false, defaultValue = "ALL") String status,
+            @RequestParam(required = false, defaultValue = "FINANCIAL") String reportType
     ) {
         if (userDetails == null) {
             return ResponseEntity.status(401).build();
         }
 
-        byte[] csvBytes = reportService.getAppointmentsCsvBytes(userDetails.getClinicId(), startDate, endDate);
-        String filename = String.format("clinic_report_%s_to_%s.csv", startDate, endDate);
+        UUID clinicId = userDetails.getClinicId();
+        UUID effectiveDoctorId = doctorId;
+
+        // Secure: Doctors can only export their own records
+        if ("DOCTOR".equalsIgnoreCase(userDetails.getRole())) {
+            effectiveDoctorId = userDetails.getId();
+        }
+
+        byte[] csvBytes = reportService.getAppointmentsCsvBytes(clinicId, startDate, endDate, effectiveDoctorId, status, reportType);
+        String prefix = reportType != null ? reportType.toLowerCase() : "clinic";
+        String filename = String.format("%s_report_%s_to_%s.csv", prefix, startDate != null ? startDate : "all", endDate != null ? endDate : "all");
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")

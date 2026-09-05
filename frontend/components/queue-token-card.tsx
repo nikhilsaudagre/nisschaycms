@@ -89,21 +89,21 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
   // Card Border and Glow based on status & emergency
   const getCardStyle = () => {
     if (isEmergency && !isCompleted) {
-      return 'border-rose-500/80 bg-gradient-to-br from-rose-50/90 via-white to-rose-50/30 dark:from-rose-950/30 dark:via-slate-900 dark:to-rose-950/10 shadow-lg shadow-rose-500/10 ring-2 ring-rose-500/40 animate-pulse-subtle';
+      return 'border-[#D64545]/80 bg-gradient-to-br from-rose-50/90 via-white to-rose-50/30 shadow-lg shadow-rose-500/10 ring-2 ring-[#D64545]/40';
     }
     if (isInConsultation) {
-      return 'border-emerald-500/80 bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/40 dark:from-emerald-950/40 dark:via-slate-900 dark:to-teal-950/20 shadow-md shadow-emerald-500/10 ring-1 ring-emerald-500/30';
+      return 'border-[#087F8C] bg-gradient-to-br from-[#087F8C]/5 via-white to-[#087F8C]/5 shadow-md shadow-[#087F8C]/10 ring-1 ring-[#087F8C]/30';
     }
     if (isCalling || isAnnouncing) {
-      return 'border-amber-500 bg-gradient-to-br from-amber-50 via-white to-amber-50/30 dark:from-amber-950/40 dark:via-slate-900 dark:to-amber-950/10 shadow-xl shadow-amber-500/20 ring-2 ring-amber-500 animate-pulse';
+      return 'border-amber-500 bg-gradient-to-br from-amber-50 via-white to-amber-50/30 shadow-xl shadow-amber-500/20 ring-2 ring-amber-500 animate-pulse';
     }
     if (isCheckedIn) {
-      return 'border-sky-300 dark:border-sky-800/60 bg-white dark:bg-slate-900/90 shadow-sm hover:shadow-md';
+      return 'border-[#087F8C]/40 bg-white shadow-xs hover:border-[#087F8C] hover:shadow-sm';
     }
     if (isCompleted) {
-      return 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 opacity-75';
+      return 'border-[#E8EEF2] bg-[#F6F9FB]/70 opacity-75';
     }
-    return 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:shadow-md';
+    return 'border-[#E8EEF2] bg-white shadow-2xs hover:border-[#087F8C]/40 hover:shadow-xs';
   };
 
   return (
@@ -112,7 +112,7 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
     >
       {/* Background ambient glow for active consultation */}
       {isInConsultation && (
-        <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-400/15 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#087F8C]/15 rounded-full blur-2xl pointer-events-none" />
       )}
 
       {/* Top Banner Row: Token Badge + Status Tag */}
@@ -122,12 +122,12 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
           <div
             className={`px-3 py-1.5 rounded-xl font-mono text-xs sm:text-sm font-black tracking-wider shadow-2xs border flex items-center space-x-1.5 ${
               isEmergency
-                ? 'bg-rose-600 text-white border-rose-500 shadow-rose-900/30'
+                ? 'bg-[#D64545] text-white border-[#D64545] shadow-rose-900/30'
                 : isInConsultation
-                ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-900/30'
+                ? 'bg-[#087F8C] text-white border-[#087F8C] shadow-teal-900/30'
                 : isCheckedIn
-                ? 'bg-teal-700 text-white border-teal-600'
-                : 'bg-slate-800 text-white border-slate-700 dark:bg-slate-100 dark:text-slate-950'
+                ? 'bg-[#087F8C] text-white border-[#087F8C]'
+                : 'bg-[#172B34] text-white border-[#172B34]'
             }`}
           >
             <span className="text-[10px] opacity-75 font-sans font-semibold">TOKEN</span>
@@ -136,8 +136,8 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
 
           {/* Emergency Pill */}
           {isEmergency && (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-950 dark:text-rose-300 animate-bounce">
-              <Zap className="w-3 h-3 text-rose-600 fill-rose-600" />
+            <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-[#D64545] border border-rose-300 animate-bounce">
+              <Zap className="w-3 h-3 text-[#D64545] fill-[#D64545]" />
               <span>Priority Triage</span>
             </span>
           )}
@@ -146,22 +146,22 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
         {/* Status Pill */}
         <div>
           {isInConsultation ? (
-            <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/30">
+              <span className="w-2 h-2 rounded-full bg-[#087F8C] animate-ping" />
               <span>In Doctor Room</span>
             </span>
           ) : isCheckedIn ? (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/60 dark:text-sky-300">
+            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20">
               <Clock className="w-3.5 h-3.5" />
               <span>Waiting in Lounge</span>
             </span>
           ) : isCompleted ? (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400">
-              <Check className="w-3.5 h-3.5 text-slate-500" />
+            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#22A06B]/10 text-[#22A06B] border border-[#22A06B]/20">
+              <Check className="w-3.5 h-3.5 text-[#22A06B]" />
               <span>Consultation Done</span>
             </span>
           ) : (
-            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300">
+            <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20">
               <Clock className="w-3.5 h-3.5" />
               <span>Scheduled</span>
             </span>
@@ -183,31 +183,31 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
           {/* Details */}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
+              <h3 className="text-sm sm:text-base font-extrabold text-[#172B34] truncate">
                 {appointment.patientName}
               </h3>
               {appointment.type === 'EMERGENCY' ? (
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-900/60">
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#D64545] bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                   Emergency
                 </span>
               ) : appointment.type === 'FOLLOW_UP' ? (
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/60 px-2 py-0.5 rounded-md border border-teal-200 dark:border-teal-900/60">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#087F8C] bg-[#087F8C]/10 px-2 py-0.5 rounded-md border border-[#087F8C]/20">
                   Follow Up
                 </span>
               ) : appointment.startTime ? (
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 px-2 py-0.5 rounded-md border border-sky-200 dark:border-sky-900/60">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#087F8C] bg-[#087F8C]/10 px-2 py-0.5 rounded-md border border-[#087F8C]/20">
                   Scheduled Appt
                 </span>
               ) : (
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded-md border border-purple-200 dark:border-purple-900/60">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4FA8DB] bg-[#4FA8DB]/10 px-2 py-0.5 rounded-md border border-[#4FA8DB]/20">
                   Direct Walk-In
                 </span>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="flex flex-wrap items-center gap-x-2 text-xs text-[#567781] mt-0.5">
               <span className="font-medium">{appointment.patientPhone || 'No Phone'}</span>
               <span>•</span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
+              <span className="font-semibold text-[#172B34]">
                 {formatTime(appointment.startTime)}
               </span>
             </div>
@@ -216,9 +216,9 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
 
         {/* Assigned Doctor Badge */}
         <div className="text-right shrink-0">
-          <div className="text-[11px] font-medium text-slate-400 dark:text-slate-500">Assigned Doctor</div>
-          <div className="text-xs font-bold text-teal-700 dark:text-teal-400 flex items-center justify-end space-x-1">
-            <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
+          <div className="text-[11px] font-medium text-[#567781]">Assigned Doctor</div>
+          <div className="text-xs font-bold text-[#087F8C] flex items-center justify-end space-x-1">
+            <Stethoscope className="w-3.5 h-3.5 text-[#087F8C]" />
             <span className="max-w-[120px] truncate">{appointment.doctorName || 'Doctor'}</span>
           </div>
         </div>
@@ -226,30 +226,30 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
 
       {/* Vitals & Complaint Bar (if available) */}
       {(appointment.reason || appointment.bpSystolic || appointment.pulse || appointment.temperature) && (
-        <div className="mb-3.5 p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5">
+        <div className="mb-3.5 p-2.5 rounded-xl bg-[#F6F9FB] border border-[#E8EEF2] text-xs space-y-1.5">
           {appointment.reason && (
-            <div className="text-slate-700 dark:text-slate-300 font-medium truncate flex items-center space-x-1.5">
-              <span className="text-[10px] uppercase font-bold text-slate-400 shrink-0">Complaint:</span>
+            <div className="text-[#172B34] font-medium truncate flex items-center space-x-1.5">
+              <span className="text-[10px] uppercase font-bold text-[#567781] shrink-0">Complaint:</span>
               <span className="truncate italic">&quot;{appointment.reason}&quot;</span>
             </div>
           )}
 
           {(appointment.bpSystolic || appointment.pulse || appointment.temperature) && (
-            <div className="flex flex-wrap items-center gap-2 text-[11px] pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] pt-1 border-t border-[#E8EEF2]">
               {appointment.bpSystolic && (
-                <span className="inline-flex items-center space-x-1 text-slate-700 dark:text-slate-300 font-bold bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-                  <Activity className="w-3 h-3 text-rose-500" />
+                <span className="inline-flex items-center space-x-1 text-[#172B34] font-bold bg-white px-2 py-0.5 rounded border border-[#E8EEF2]">
+                  <Activity className="w-3 h-3 text-[#D64545]" />
                   <span>BP {appointment.bpSystolic}/{appointment.bpDiastolic || '?'}</span>
                 </span>
               )}
               {appointment.pulse && (
-                <span className="inline-flex items-center space-x-1 text-slate-700 dark:text-slate-300 font-bold bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-                  <Heart className="w-3 h-3 text-rose-500" />
+                <span className="inline-flex items-center space-x-1 text-[#172B34] font-bold bg-white px-2 py-0.5 rounded border border-[#E8EEF2]">
+                  <Heart className="w-3 h-3 text-[#D64545]" />
                   <span>{appointment.pulse} bpm</span>
                 </span>
               )}
               {appointment.temperature && (
-                <span className="inline-flex items-center space-x-1 text-slate-700 dark:text-slate-300 font-bold bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                <span className="inline-flex items-center space-x-1 text-[#172B34] font-bold bg-white px-2 py-0.5 rounded border border-[#E8EEF2]">
                   <Thermometer className="w-3 h-3 text-amber-500" />
                   <span>{appointment.temperature}°F</span>
                 </span>
@@ -260,17 +260,17 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
       )}
 
       {/* Actions Footer Bar */}
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+      <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-[#E8EEF2]">
         {/* Left Side: Call Audio Button */}
         <Button
           variant="outline"
           size="sm"
           onClick={handleCallClick}
           disabled={isCompleted}
-          className={`h-9 px-3 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all ${
+          className={`h-9 px-3 rounded-xl font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer ${
             isAnnouncing
               ? 'bg-amber-500 text-white border-amber-600 ring-2 ring-amber-400 animate-pulse'
-              : 'hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60'
+              : 'hover:bg-amber-50 text-amber-800 border-amber-200'
           }`}
         >
           <Volume2 className={`w-4 h-4 ${isAnnouncing ? 'animate-bounce' : 'text-amber-600'}`} />
@@ -285,10 +285,10 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
               size="sm"
               variant="outline"
               onClick={() => onOpenConsultation(appointment)}
-              className="h-9 px-3 border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1"
+              className="h-9 px-3 border-[#087F8C]/30 text-[#087F8C] bg-white hover:bg-[#087F8C]/10 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1 cursor-pointer"
               title="Open Doctor Prescription Note Pad"
             >
-              <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
+              <Stethoscope className="w-3.5 h-3.5 text-[#087F8C]" />
               <span>Rx Pad</span>
             </Button>
           )}
@@ -297,7 +297,7 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
             <Button
               size="sm"
               onClick={() => onUpdateStatus(appointment.id, 'CHECKED_IN')}
-              className="h-9 px-3 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-2xs"
+              className="h-9 px-3 bg-[#087F8C] hover:bg-[#076b77] text-white font-bold text-xs rounded-xl shadow-2xs cursor-pointer border-0"
             >
               <UserCheck className="w-3.5 h-3.5 mr-1" />
               <span>Check In</span>
@@ -311,7 +311,7 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
                 onUpdateStatus(appointment.id, 'IN_CONSULTATION');
                 if (onOpenConsultation) onOpenConsultation(appointment);
               }}
-              className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm"
+              className="h-9 px-3.5 bg-[#087F8C] hover:bg-[#076b77] text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer border-0"
             >
               <Stethoscope className="w-3.5 h-3.5 mr-1" />
               <span>Start Consult</span>
@@ -328,7 +328,7 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
                   onUpdateStatus(appointment.id, 'COMPLETED');
                 }
               }}
-              className="h-9 px-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-md"
+              className="h-9 px-3.5 bg-[#22A06B] hover:bg-[#1e8d5e] text-white font-bold text-xs rounded-xl shadow-md cursor-pointer border-0"
             >
               <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
               <span>Complete Consult</span>
@@ -336,7 +336,7 @@ export const QueueTokenCard: React.FC<QueueTokenCardProps> = ({
           )}
 
           {isCompleted && (
-            <span className="text-xs font-semibold text-slate-400 italic px-2">Completed</span>
+            <span className="text-xs font-semibold text-[#567781] italic px-2">Completed</span>
           )}
         </div>
       </div>
