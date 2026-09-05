@@ -836,7 +836,7 @@ export default function MedicinesPage() {
     const newSaleRecord: PharmacySalesHistoryRecord = {
       id: `sale-${Date.now()}`,
       invoiceNo: billNo,
-      dateTime: nowStr,
+      dateTime: nowIso,
       customerType: posCustomerType,
       patientName: posPatientName || 'Walk-In Customer',
       patientPhone: posPatientMobile || 'N/A',
@@ -865,7 +865,7 @@ export default function MedicinesPage() {
 
     setLastGeneratedBill({
       billNo,
-      date: nowStr,
+      date: nowIso,
       customerName: posPatientName || 'Customer',
       customerMobile: posPatientMobile || 'N/A',
       customerType: posCustomerType,

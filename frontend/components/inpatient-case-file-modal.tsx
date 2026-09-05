@@ -841,11 +841,11 @@ export const InpatientCaseFileModal: React.FC<InpatientCaseFileModalProps> = ({
                       <div className="space-y-1">
                         <div className="flex justify-between">
                           <span className="text-[#567781]">Admitted Date:</span>
-                          <span className="font-mono font-bold text-[#172B34]">{formatClinicalDateTime(admissionDate)}</span>
+                          <span className="font-mono font-bold text-[#172B34]">{formatClinicalDateTime(currentAdm.admissionDate)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-[#567781]">Current Length of Stay:</span>
-                          <span className="font-bold text-[#087F8C]">{stayLength} Days</span>
+                          <span className="font-bold text-[#087F8C]">{stayDays} Days</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-[#567781]">Ward & Bed:</span>

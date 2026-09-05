@@ -443,6 +443,7 @@ export interface InpatientServiceCharge {
   quantity: number;
   totalAmount: number;
   dateAdded: string;
+  createdAt?: string;
   notes?: string;
 }
 
@@ -452,6 +453,7 @@ export interface InpatientAdvancePayment {
   paymentMode: 'CASH' | 'UPI' | 'CARD' | 'INSURANCE_TPA' | 'BANK_TRANSFER' | string;
   receiptNumber: string;
   datePaid: string;
+  createdAt?: string;
   notes?: string;
 }
 
