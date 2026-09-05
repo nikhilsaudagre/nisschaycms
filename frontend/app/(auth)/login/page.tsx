@@ -10,7 +10,19 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight, Stethoscope, CheckCircle2, Check } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  ArrowRight,
+  Stethoscope,
+  CheckCircle2,
+  Check,
+  Loader2,
+  ShieldCheck
+} from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -24,9 +36,14 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   });
 
   const onSubmit = async (data: LoginInput) => {
@@ -36,12 +53,15 @@ export default function LoginPage() {
     try {
       const loggedInUser = await login(data);
       setIsSuccess(true);
-      setSuccessMessage(`Sign in successful! Welcome back, ${loggedInUser.name || 'Doctor'}. Opening your workspace...`);
+      const doctorGreeting = loggedInUser.name
+        ? `Dr. ${loggedInUser.name.replace(/^dr\.?\s*/i, '')}`
+        : 'Doctor';
+      setSuccessMessage(`Sign in successful! Welcome back, ${doctorGreeting}. Opening ${loggedInUser.clinicName || 'your clinic workspace'}...`);
       setTimeout(() => {
         router.push('/dashboard');
-      }, 900);
+      }, 1000);
     } catch (err: unknown) {
-      setError(typeof err === 'string' ? err : 'Failed to login. Please check your credentials.');
+      setError(typeof err === 'string' ? err : 'Failed to sign in. Please verify your credentials.');
       setIsSubmitting(false);
       setIsSuccess(false);
     }
@@ -51,53 +71,66 @@ export default function LoginPage() {
     <div className="space-y-6">
       {/* Login Header */}
       <div className="space-y-2 text-center sm:text-left">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-sky-50 text-teal-700 border border-sky-100 text-xs font-bold mb-1">
-          <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
-          <span>Doctor & Staff Portal</span>
+        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#087F8C]/10 text-[#087F8C] border border-[#087F8C]/20 text-xs font-extrabold mb-1">
+          <Stethoscope className="w-3.5 h-3.5 text-[#087F8C]" />
+          <span>Doctor & Healthcare Staff Portal</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Sign In</h1>
-        <p className="text-slate-500 font-normal text-xs sm:text-sm">
-          Enter your login credentials to access your clinic.
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#172B34]">
+          Sign In to Practice
+        </h1>
+        <p className="text-[#567781] font-medium text-xs sm:text-sm">
+          Enter your registered practitioner or administrative credentials.
         </p>
       </div>
 
       {/* Success Alert Card */}
       {successMessage && (
-        <div className="p-4 bg-sky-50 border border-sky-200 rounded-xl text-xs text-teal-800 font-bold flex items-start space-x-3 shadow-xs animate-fadeIn">
-          <CheckCircle2 className="w-4.5 h-4.5 text-teal-600 shrink-0 mt-0.5" />
-          <span>{successMessage}</span>
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-950 font-bold flex items-start space-x-3 shadow-xs animate-fadeIn">
+          <div className="w-7 h-7 rounded-full bg-[#22A06B] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Check className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-emerald-900 font-extrabold text-sm">Authenticated Successfully!</div>
+            <p className="text-emerald-800 text-xs font-medium mt-0.5">{successMessage}</p>
+          </div>
         </div>
       )}
 
       {/* Error Alert Card */}
       {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold flex items-start space-x-3 shadow-2xs animate-fadeIn">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-          <span>{error}</span>
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 font-semibold flex items-start space-x-3 shadow-2xs animate-fadeIn">
+          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <div className="font-bold text-rose-800">Authentication Issue</div>
+            <div className="text-rose-700 text-[11.5px] leading-relaxed">{error}</div>
+          </div>
         </div>
       )}
 
       {/* Form Fields */}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4.5">
         {/* Email Field */}
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-slate-700 text-xs font-extrabold uppercase tracking-wider">
-            Email Address
+          <Label htmlFor="email" className="text-[#172B34] text-xs font-extrabold uppercase tracking-wider">
+            Email Address *
           </Label>
           <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4.5 h-4.5 pointer-events-none" />
+            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
             <Input
               id="email"
               type="email"
-              placeholder="doctor@gmail.com"
-              className={`pl-11 h-11 text-sm bg-slate-50/50 focus:bg-white rounded-xl font-medium transition-all ${
-                errors.email ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-slate-200 focus-visible:ring-teal-600'
+              placeholder="doctor@hospital.com"
+              autoComplete="email"
+              className={`pl-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white rounded-xl font-medium transition-all text-[#172B34] ${
+                errors.email
+                  ? 'border-rose-400 focus-visible:ring-rose-400'
+                  : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
               }`}
               {...register('email')}
             />
           </div>
           {errors.email && (
-            <p className="text-rose-500 text-xs font-semibold mt-1 flex items-center gap-1">
+            <p className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
               <span>{errors.email.message}</span>
             </p>
@@ -107,38 +140,41 @@ export default function LoginPage() {
         {/* Password Field */}
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <Label htmlFor="password" className="text-slate-700 text-xs font-extrabold uppercase tracking-wider">
-              Password
+            <Label htmlFor="password" className="text-[#172B34] text-xs font-extrabold uppercase tracking-wider">
+              Password *
             </Label>
             <Link
               href="/forgot-password"
-              className="text-xs font-bold text-teal-600 hover:text-teal-800 transition-colors"
+              className="text-xs font-bold text-[#087F8C] hover:text-[#076b77] transition-colors"
             >
               Forgot password?
             </Link>
           </div>
           <div className="relative">
-            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4.5 h-4.5 pointer-events-none" />
+            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#567781] w-4.5 h-4.5 pointer-events-none" />
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Enter your password"
-              className={`pl-11 pr-11 h-11 text-sm bg-slate-50/50 focus:bg-white rounded-xl font-medium transition-all ${
-                errors.password ? 'border-rose-400 focus-visible:ring-rose-400' : 'border-slate-200 focus-visible:ring-teal-600'
+              placeholder="Enter account password"
+              autoComplete="current-password"
+              className={`pl-11 pr-11 h-11 text-sm bg-[#F6F9FB] focus:bg-white rounded-xl font-medium transition-all text-[#172B34] ${
+                errors.password
+                  ? 'border-rose-400 focus-visible:ring-rose-400'
+                  : 'border-[#E8EEF2] focus-visible:ring-[#087F8C]'
               }`}
               {...register('password')}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#567781] hover:text-[#172B34] transition-colors focus:outline-none cursor-pointer p-1"
               title={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-rose-500 text-xs font-semibold mt-1 flex items-center gap-1">
+            <p className="text-rose-600 text-xs font-semibold mt-1 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
               <span>{errors.password.message}</span>
             </p>
@@ -149,35 +185,46 @@ export default function LoginPage() {
         <Button
           type="submit"
           className={`w-full h-11 text-white font-extrabold text-sm rounded-xl transition-all duration-200 mt-6 shadow-md active:scale-98 flex items-center justify-center space-x-2 border-0 cursor-pointer ${
-            isSuccess ? 'bg-teal-600 shadow-teal-600/30' : 'bg-teal-600 hover:bg-teal-700 shadow-teal-600/25'
+            isSuccess
+              ? 'bg-[#22A06B] hover:bg-[#1f8f5f] shadow-emerald-600/30'
+              : 'bg-[#087F8C] hover:bg-[#076b77] shadow-[#087F8C]/25'
           }`}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isSuccess}
         >
           {isSuccess ? (
             <>
-              <Check className="w-4.5 h-4.5" />
-              <span>Signed In! Opening Dashboard...</span>
+              <Check className="w-5 h-5" />
+              <span>Signed In! Opening Workspace...</span>
             </>
           ) : isSubmitting ? (
-            <span>Signing In...</span>
+            <>
+              <Loader2 className="w-4.5 h-4.5 animate-spin" />
+              <span>Verifying Credentials...</span>
+            </>
           ) : (
             <>
-              <span>Sign In</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Sign In to Clinic</span>
+              <ArrowRight className="w-4.5 h-4.5" />
             </>
           )}
         </Button>
       </form>
 
+      {/* Security & Multi-Tenancy Guarantee */}
+      <div className="flex items-center justify-center gap-2 text-[11px] font-semibold text-[#567781] pt-1">
+        <ShieldCheck className="w-3.5 h-3.5 text-[#22A06B]" />
+        <span>HIPAA / DISHA Compliant Tenant Data Isolation</span>
+      </div>
+
       {/* Registration Footer */}
-      <div className="pt-4 border-t border-slate-100 text-center">
-        <p className="text-slate-500 text-xs font-semibold">
-          New clinic practice?{' '}
+      <div className="pt-4 border-t border-[#E8EEF2] text-center">
+        <p className="text-[#567781] text-xs font-semibold">
+          Need to register a new clinic or hospital?{' '}
           <Link
             href="/register-clinic"
-            className="text-teal-600 hover:text-teal-800 font-extrabold transition-colors underline underline-offset-2"
+            className="text-[#087F8C] hover:text-[#076b77] font-extrabold transition-colors underline underline-offset-2"
           >
-            Register Clinic
+            Register Clinic / Hospital
           </Link>
         </p>
       </div>
