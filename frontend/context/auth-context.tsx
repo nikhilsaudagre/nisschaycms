@@ -172,7 +172,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return user;
     } catch (error: any) {
       setState((prev) => ({ ...prev, isLoading: false }));
-      throw error.response?.data?.message || error.response?.data?.error || 'Invalid credentials';
+      const msg = error.response?.data?.message || error.response?.data?.error || (error.code === 'ERR_NETWORK' ? 'Unable to reach backend server. Please ensure the backend is active.' : error.message) || 'Invalid credentials';
+      throw msg;
     }
   };
 
@@ -200,7 +201,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return user;
     } catch (error: any) {
       setState((prev) => ({ ...prev, isLoading: false }));
-      throw error.response?.data?.message || error.response?.data?.error || 'Failed to register clinic';
+      const msg = error.response?.data?.message || error.response?.data?.error || (error.code === 'ERR_NETWORK' ? 'Unable to reach backend server. Please ensure the backend is active.' : error.message) || 'Failed to register clinic';
+      throw msg;
     }
   };
 

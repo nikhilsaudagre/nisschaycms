@@ -1,16 +1,46 @@
 import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
 export const getBaseApiUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+
+  // If running in browser
   if (typeof window !== 'undefined') {
     const currentHost = window.location.hostname;
-    return `http://${currentHost}:8085/api/v1`;
+    const isLocalhost =
+      currentHost === 'localhost' ||
+      currentHost === '127.0.0.1' ||
+      /^192\.168\./.test(currentHost) ||
+      /^10\./.test(currentHost) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(currentHost);
+
+    // If on local dev/LAN machine, point to local Spring Boot on port 8085
+    if (isLocalhost) {
+      return `http://${currentHost}:8085/api/v1`;
+    }
+
+    // If explicit production API URL is provided in environment variables, use it
+    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+      let cleanUrl = envUrl.replace(/\/+$/, '');
+      if (!cleanUrl.endsWith('/api/v1')) {
+        cleanUrl = `${cleanUrl}/api/v1`;
+      }
+      return cleanUrl;
+    }
+
+    // Default Render production backend fallback if no custom env is set
+    return 'https://nisschay-cms-backend.onrender.com/api/v1';
   }
-  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085/api/v1';
-  url = url.trim().replace(/\/+$/, ''); // Remove trailing slashes
-  if (!url.endsWith('/api/v1')) {
-    url = `${url}/api/v1`;
+
+  // Server-side rendering (SSR) fallback
+  if (envUrl) {
+    let cleanUrl = envUrl.replace(/\/+$/, '');
+    if (!cleanUrl.endsWith('/api/v1')) {
+      cleanUrl = `${cleanUrl}/api/v1`;
+    }
+    return cleanUrl;
   }
-  return url;
+
+  return 'http://localhost:8085/api/v1';
 };
 
 export const apiClient = axios.create({
