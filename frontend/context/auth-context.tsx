@@ -150,7 +150,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (input: LoginInput): Promise<User> => {
     queryClient.clear();
-    setState((prev) => ({ ...prev, isLoading: true }));
     try {
       const response = await apiClient.post('/auth/login', input);
       const { accessToken, refreshToken, userId, name, email, role, clinicId, clinicName, profilePictureUrl } = response.data;
@@ -171,15 +170,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return user;
     } catch (error: any) {
-      setState((prev) => ({ ...prev, isLoading: false }));
-      const msg = error.response?.data?.message || error.response?.data?.error || (error.code === 'ERR_NETWORK' ? 'Unable to reach backend server. Please ensure the backend is active.' : error.message) || 'Invalid credentials';
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        (error.code === 'ERR_NETWORK'
+          ? 'Unable to connect to backend server. Please verify backend service on port 8085.'
+          : error.message) ||
+        'Invalid credentials';
       throw msg;
     }
   };
 
   const registerClinic = async (input: ClinicRegisterInput): Promise<User> => {
     queryClient.clear();
-    setState((prev) => ({ ...prev, isLoading: true }));
     try {
       const response = await apiClient.post('/auth/register-clinic', input);
       const { accessToken, refreshToken, userId, name, email, role, clinicId, clinicName, profilePictureUrl } = response.data;
@@ -200,8 +203,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return user;
     } catch (error: any) {
-      setState((prev) => ({ ...prev, isLoading: false }));
-      const msg = error.response?.data?.message || error.response?.data?.error || (error.code === 'ERR_NETWORK' ? 'Unable to reach backend server. Please ensure the backend is active.' : error.message) || 'Failed to register clinic';
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        (error.code === 'ERR_NETWORK'
+          ? 'Unable to connect to backend server. Please verify backend service on port 8085.'
+          : error.message) ||
+        'Failed to register facility';
       throw msg;
     }
   };
