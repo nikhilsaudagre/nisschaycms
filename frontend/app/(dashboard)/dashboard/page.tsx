@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LiveClock } from '@/components/live-clock';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, getBaseApiUrl } from '@/lib/api-client';
 import { getDoctorFeeForType, getFeeLabelForType } from '@/lib/utils';
 import { Appointment, Doctor, Medicine, Clinic, Patient } from '@/types';
 import { PatientForm } from '@/components/patient-form';
@@ -940,7 +940,7 @@ export default function DashboardPage() {
     // 4. Real-Time Server-Sent Events (SSE) Live OPD Queue Push
     let sse: EventSource | null = null;
     try {
-      sse = new EventSource('http://localhost:8085/api/v1/appointments/queue/stream');
+      sse = new EventSource(`${getBaseApiUrl()}/appointments/queue/stream`);
       sse.addEventListener('QUEUE_STATUS_CHANGED', () => loadAppointments());
       sse.addEventListener('APPOINTMENT_CREATED', () => loadAppointments());
       sse.addEventListener('CONSULTATION_COMPLETED', () => loadAppointments());
